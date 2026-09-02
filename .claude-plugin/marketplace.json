@@ -1,0 +1,26 @@
+{
+  "name": "trobanga",
+  "owner": {
+    "name": "trobanga"
+  },
+  "plugins": [
+    {
+      "name": "c4ai",
+      "source": "./plugins/c4ai",
+      "description": "Layered documentation system for AI + Humans following the C4 model",
+      "version": "0.1.0"
+    },
+    {
+      "name": "vault-session",
+      "source": "./plugins/vault-session",
+      "description": "Vault session lifecycle: load recent logs on SessionStart, write log stub on SessionEnd",
+      "version": "0.1.0"
+    },
+    {
+      "name": "trobanga-skills",
+      "source": "./plugins/trobanga-skills",
+      "description": "trobanga personal skills: workflow, docs, architecture, gamedev, and engineering skills",
+      "version": "0.1.0"
+    }
+  ]
+}

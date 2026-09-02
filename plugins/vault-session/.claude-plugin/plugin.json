@@ -1,0 +1,8 @@
+{
+  "name": "vault-session",
+  "description": "Vault session lifecycle: load recent logs on SessionStart, write log stub on SessionEnd",
+  "version": "0.1.0",
+  "author": {
+    "name": "trobanga"
+  }
+}
