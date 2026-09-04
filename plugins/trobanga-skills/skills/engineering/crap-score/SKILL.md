@@ -90,6 +90,38 @@ above the threshold.
 - Verified on a Go module: a function with four `if` statements and 6 of
   9 statements covered scores 5.9 at cc 5.
 
+## Rust
+
+- Detected by `Cargo.toml`. Coverage: **line**.
+- Needs two tools:
+
+      cargo install cargo-llvm-cov
+      cargo install cargo-crap
+
+  `cargo llvm-cov` also needs the `llvm-tools` component of the
+  toolchain. It installs it on the first run and asks before it does.
+- Build the report from the crate root:
+
+      cargo llvm-cov --lcov --output-path lcov.info
+
+- Report: `lcov.info`, the default of `--report`. The collector runs
+  `cargo crap --lcov lcov.info --format json` over it, which reads the
+  complexity of every function from the source with `syn`.
+- Coverage is the share of covered lines, from the `DA` records of the
+  LCOV file. `cargo llvm-cov --lcov` on a stable toolchain writes no
+  branch records (`BRF:0`), so branch coverage is not available. A `match`
+  arm that no test reaches lowers the number, but only through the lines
+  it holds.
+- cargo-crap gives the first line of a function and no last line, so a
+  function ends where the next function of the same file starts. An edit
+  above the first line of a function (attribute, doc comment) therefore
+  maps to the preceding function.
+- cargo-crap has a threshold of its own. crap-score ignores it and
+  applies `--threshold`.
+- Verified on a crate with cargo-crap 0.4.3: a function with four
+  decisions and 9 of 11 lines covered scores 5.2 at cc 5, the same value
+  cargo-crap reports itself.
+
 ## TypeScript and JavaScript
 
 - Detected by `package.json`. Coverage: **branch**, statement for

@@ -28,8 +28,8 @@ LANGUAGES = {
         sources=["*.go"], coverage="statement"),
     "rust": Language(
         marker="Cargo.toml", module="collect_rust",
-        report="target/crap/llvm-cov.json",
-        sources=["*.rs"], coverage="region"),
+        report="lcov.info",
+        sources=["*.rs"], coverage="line"),
     "ts": Language(
         marker="package.json", module="collect_ts",
         report="coverage/coverage-final.json",
