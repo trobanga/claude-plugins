@@ -1,6 +1,6 @@
 ---
 name: crap-score
-description: Compute the CRAP score (Change Risk Anti-Patterns) of every function changed on the current branch, from a coverage report and a git diff, and fail above a threshold. Supports Java, Go, Rust and TypeScript. Measures only and writes no tests. Use when the user asks for a CRAP score, a complexity-times-coverage check, or which changed functions are risky. To fix the violations, use the crap-agent.
+description: Compute the CRAP score (Change Risk Anti-Patterns) of every function changed on the current branch, from a coverage report and a git diff, and fail above a threshold. Supports Java, Go, Rust, TypeScript and Elixir. Measures only and writes no tests. Use when the user asks for a CRAP score, a complexity-times-coverage check, or which changed functions are risky. To fix the violations, use the crap-agent.
 allowed-tools: Bash, Read, Glob
 ---
 
@@ -44,7 +44,7 @@ the coverage kind and appears in the footer of the table.
          --range origin/main...HEAD --threshold 8
 
    `--report` gives the report path. Only Java needs it, because the
-   report lies in the module. `--lang java|go|rust|ts` overrides the
+   report lies in the module. `--lang java|go|rust|elixir|ts` overrides the
    detected project type.
    `--diff FILE` or `--diff -` takes a unified diff instead of a range.
    With `--range`, the script fails when the report is older than a
@@ -155,9 +155,48 @@ above the threshold.
 
 ## Elixir
 
-Not supported. The Elixir tools report line coverage per file and no
-complexity per function, so the two numbers CRAP needs are not available
-from one report.
+- Detected by `mix.exs`. Coverage: **line**.
+- Needs ExCoveralls in the project and the Elixir toolchain, nothing
+  else. The helper `crap_funcs.exs` reads the complexity and the line
+  range of every function clause from the Elixir AST, with the standard
+  library only.
+
+      # mix.exs
+      test_coverage: [tool: ExCoveralls],
+      deps: [{:excoveralls, "~> 0.18", only: :test}]
+
+- Build the report from the project root:
+
+      MIX_ENV=test mix coveralls.lcov
+
+- Report: `cover/lcov.info`, the default of `--report`. ExCoveralls
+  writes absolute source paths; the collector makes them relative to
+  the working directory, so run the script from the project root.
+- Coverage is the share of covered lines, from the `DA` records of the
+  LCOV file. Erlang's `cover` has no branch counts, so a `case` arm that
+  no test reaches lowers the number only through the lines it holds.
+- One record per `def`, `defp`, `defmacro` or `defmacrop` clause, so
+  the ranges stay exact. A function with several clauses is named
+  `Mod.name/arity#n`, with `n` the index of the clause; a function with
+  one clause is `Mod.name/arity`. Merging the clauses would be closer
+  to the complexity of the whole function, but a merged range could
+  swallow a function that sits between two clauses.
+- Decisions: `if` and `unless`; each arm of `case`, `cond`, `receive`,
+  `try` and `with ... else`, except a final `_` or `true` arm; each `<-`
+  step of a `with`; each filter of a `for`; `&&`, `||`, `and`, `or`; and
+  a guard on the clause head plus every `and`, `or` and `when` inside
+  it. A guard on a `case` arm adds nothing, the arm is the decision.
+- An anonymous `fn` keeps no record of its own. Each of its clauses
+  after the first and each decision in its body raise the complexity of
+  the function around it.
+- Functions that a macro generates (Ecto schema, Phoenix controller
+  plugs, `use` callbacks) are not in the source AST, so they get no
+  record. That under-reports and never gives a wrong number.
+- Umbrella projects: run the script in each app directory with its own
+  `cover/lcov.info`, as with the Java per-module loop.
+- Verified with Elixir 1.20 and ExCoveralls 0.18.5: a function with an
+  `if` and a three-arm `cond` before a `true` arm, 4 of 6 lines covered,
+  scores 5.9 at cc 5, the same value as the equal Go function.
 
 ## Tests
 

@@ -1,6 +1,6 @@
 ---
 name: crap-agent
-description: Compute the CRAP score of every function changed on the current branch against origin/main, in Java, Go, Rust or TypeScript, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
+description: Compute the CRAP score of every function changed on the current branch against origin/main, in Java, Go, Rust, TypeScript or Elixir, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
 tools: Bash, Read, Edit, Write, Grep, Glob
 ---
 
@@ -15,15 +15,14 @@ the tools of each language and the mapping rules.
 Threshold: 8, unless the user gives another value. Never lower it
 yourself.
 
-Supported: Java, Go, Rust, TypeScript and JavaScript. Elixir is not
-supported; say so and stop.
+Supported: Java, Go, Rust, TypeScript, JavaScript and Elixir.
 
 ## Procedure
 
 ### 1. Measure
 
 1. Detect the language from the build file: `pom.xml`, `go.mod`,
-   `Cargo.toml`, `package.json`.
+   `Cargo.toml`, `mix.exs`, `package.json`.
 2. Build fresh coverage. Never reuse an old report, it may describe old
    code. Run this step outside the Bash sandbox: coverage tools write to
    the toolchain caches, and Mockito cannot attach its agent inside it.
@@ -38,6 +37,9 @@ supported; say so and stop.
    - Rust: `cargo llvm-cov --lcov --output-path lcov.info`
    - TypeScript: `npx vitest run --coverage` with the Istanbul provider,
      or `npx jest --coverage --coverageReporters=json`.
+   - Elixir: `MIX_ENV=test mix coveralls.lcov`. ExCoveralls must be a
+     dependency of the project; if it is not, stop and say so, do not
+     add it yourself.
 
    Tests that the project documents as expected local failures (see its
    AGENTS.md or CLAUDE.md) may fail. Any other test failure stops the
@@ -90,6 +92,14 @@ Per language, the paths that stay untested longest:
   ternary, and the `catch`. A default argument counts as no decision, so
   it never raises the score. Extract a named function; a lookup object
   replaces a long `switch`.
+- **Elixir**: every arm of a `case` and a `cond`, the `else` of a `with`
+  and every `{:error, _}` tuple, the second clause of a multi-clause
+  function, and the `rescue` of a `try`. Coverage is line based, so an
+  arm on one line needs a test that reaches exactly it. A function is
+  scored per clause: move an arm of a long `case` into a clause of its
+  own, or into a helper function, and give each clause a test. A
+  multi-clause head with pattern matching replaces `if` and `cond` on
+  the shape of the argument.
 
 Do not touch functions the diff does not change. Do not delete or weaken
 tests. Follow the project's coding rules from its AGENTS.md or CLAUDE.md.
