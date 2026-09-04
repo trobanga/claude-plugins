@@ -90,6 +90,35 @@ above the threshold.
 - Verified on a Go module: a function with four `if` statements and 6 of
   9 statements covered scores 5.9 at cc 5.
 
+## TypeScript and JavaScript
+
+- Detected by `package.json`. Coverage: **branch**, statement for
+  functions without branches.
+- Needs an Istanbul `coverage-final.json`. Vitest, Jest, nyc and c8 all
+  write it. With Vitest, ask for the Istanbul provider, because the V8
+  provider writes no `fnMap`:
+
+      // vitest.config.ts
+      test: { coverage: { provider: "istanbul", reporter: ["json"] } }
+
+  Then:
+
+      npx vitest run --coverage
+
+  With Jest: `npx jest --coverage --coverageReporters=json`.
+- Report: `coverage/coverage-final.json`, the default of `--report`.
+- The complexity is one plus the decisions of the branches inside the
+  function: a branch with n paths counts n - 1. A default argument
+  counts as no decision, Istanbul gives it one path only.
+- Anonymous functions keep no record of their own; their branches raise
+  the complexity of the function around them.
+  `--include-anonymous` on the collector scores them separately.
+- A named function inside another function is counted twice: once alone,
+  once in the range of the function around it.
+- Verified with Vitest 2.1 and the Istanbul provider: a function with
+  four `if` statements and 5 of 8 branch paths covered scores 6.3 at
+  cc 5, the same numbers as the equal Java method.
+
 ## Elixir
 
 Not supported. The Elixir tools report line coverage per file and no
