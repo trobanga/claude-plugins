@@ -71,6 +71,25 @@ above the threshold.
 - Verified on a Maven project with JaCoCo 0.8.15: a method with four
   `if` statements and 5 of 8 branches covered scores 6.3 at cc 5.
 
+## Go
+
+- Detected by `go.mod`. Coverage: **statement**.
+- Needs the Go toolchain, nothing else. The helper `crap_funcs.go` reads
+  the complexity and the line range of every function from the Go AST.
+- Build the report from the repository root:
+
+      go test -count=1 -coverprofile=coverage.out ./...
+
+  Add `-coverpkg=./...` when the tests live in a package of their own.
+- Report: `coverage.out`, the default of `--report`.
+- Coverage is the share of covered statements of the function. The cover
+  tool cuts a block at every branch, so an uncovered branch always lowers
+  the number, but a branch without statements stays invisible.
+- A function literal keeps no record of its own. Its branches raise the
+  complexity of the function around it.
+- Verified on a Go module: a function with four `if` statements and 6 of
+  9 statements covered scores 5.9 at cc 5.
+
 ## Elixir
 
 Not supported. The Elixir tools report line coverage per file and no
