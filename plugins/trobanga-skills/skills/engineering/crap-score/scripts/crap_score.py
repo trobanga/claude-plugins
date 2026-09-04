@@ -30,6 +30,10 @@ LANGUAGES = {
         marker="Cargo.toml", module="collect_rust",
         report="lcov.info",
         sources=["*.rs"], coverage="line"),
+    "elixir": Language(
+        marker="mix.exs", module="collect_elixir",
+        report="cover/lcov.info",
+        sources=["*.ex", "*.exs"], coverage="line"),
     "ts": Language(
         marker="package.json", module="collect_ts",
         report="coverage/coverage-final.json",
@@ -38,9 +42,7 @@ LANGUAGES = {
 
 # a Go or Java repository often ships a package.json for its frontend, so
 # the backend markers are tested first
-ORDER = ["java", "go", "rust", "ts"]
-
-UNSUPPORTED = {"mix.exs": "Elixir"}
+ORDER = ["java", "go", "rust", "elixir", "ts"]
 
 
 def detect(root="."):
@@ -49,11 +51,8 @@ def detect(root="."):
     for lang in ORDER:
         if os.path.exists(os.path.join(root, LANGUAGES[lang].marker)):
             return lang
-    for marker, name in UNSUPPORTED.items():
-        if os.path.exists(os.path.join(root, marker)):
-            raise SystemExit(f"{name} is not supported by crap-score")
     raise SystemExit(
-        "no pom.xml, go.mod, Cargo.toml or package.json found; "
+        "no pom.xml, go.mod, Cargo.toml, mix.exs or package.json found; "
         "give --lang explicitly")
 
 

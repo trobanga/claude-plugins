@@ -32,11 +32,9 @@ class DetectTest(unittest.TestCase):
         self.marker("Cargo.toml")
         self.assertEqual("rust", crap_score.detect())
 
-    def test_elixir_is_refused_by_name(self):
+    def test_detects_elixir_from_mix_exs(self):
         self.marker("mix.exs")
-        with self.assertRaises(SystemExit) as ctx:
-            crap_score.detect()
-        self.assertIn("Elixir", str(ctx.exception))
+        self.assertEqual("elixir", crap_score.detect())
 
     def test_detects_typescript_from_package_json(self):
         self.marker("package.json")
