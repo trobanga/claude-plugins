@@ -1,159 +1,106 @@
-"""Per-method CRAP score for methods touched by a diff.
+"""CRAP score of the functions a diff touches, for one of five languages.
 
-CRAP(m) = cc(m)^2 * (1 - coverage(m))^3 + cc(m)
+    CRAP(f) = cc(f)^2 * (1 - coverage(f))^3 + cc(f)
 
-cc and coverage come from a JaCoCo XML report. A method is "touched"
-when at least one added line of the diff lies inside it.
+This is the entry point. It detects the project type, runs the collector
+of that language over a coverage report, and scores the records with
+`crap_core`. Run a collector alone to inspect its records.
 """
 
+import importlib
 import io
-import re
-import xml.etree.ElementTree as ET
-from collections import defaultdict
+import subprocess
+import sys
+from collections import namedtuple
 
-HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+import crap_core
 
+Language = namedtuple("Language", "marker module report sources coverage")
 
-def added_lines(diff):
-    """Map 'package/path/File.java' -> set of added line numbers."""
-    result = defaultdict(set)
-    path = None
-    line = None
-    for raw in diff:
-        raw = raw.rstrip("\n")
-        if raw.startswith("+++ "):
-            path = raw[4:]
-            path = path[2:] if path.startswith("b/") else path
-            continue
-        hunk = HUNK.match(raw)
-        if hunk:
-            line = int(hunk.group(1))
-            continue
-        if line is None:
-            continue
-        if raw.startswith("+"):
-            result[source_key(path)].add(line)
-            line += 1
-        elif not raw.startswith("-"):
-            line += 1
-    return result
+LANGUAGES = {
+    "java": Language(
+        marker="pom.xml", module="collect_java",
+        report="target/site/jacoco/jacoco.xml",
+        sources=["*.java"], coverage="branch"),
+    "go": Language(
+        marker="go.mod", module="collect_go",
+        report="coverage.out",
+        sources=["*.go"], coverage="statement"),
+    "rust": Language(
+        marker="Cargo.toml", module="collect_rust",
+        report="target/crap/llvm-cov.json",
+        sources=["*.rs"], coverage="region"),
+    "ts": Language(
+        marker="package.json", module="collect_ts",
+        report="coverage/coverage-final.json",
+        sources=["*.ts", "*.tsx", "*.js", "*.jsx"], coverage="branch"),
+}
 
+# a Go or Java repository often ships a package.json for its frontend, so
+# the backend markers are tested first
+ORDER = ["java", "go", "rust", "ts"]
 
-def source_key(path):
-    """Strip the maven module and source-root prefix: keep package path + file."""
-    marker = "/src/main/java/"
-    idx = path.find(marker)
-    return path[idx + len(marker):] if idx >= 0 else path
+UNSUPPORTED = {"mix.exs": "Elixir"}
 
 
-def is_lambda(name):
-    return name.startswith("lambda$")
-
-
-def method_entry(m):
-    counters = {
-        c.get("type"): (int(c.get("missed")), int(c.get("covered")))
-        for c in m.findall("counter")
-    }
-    cc = sum(counters["COMPLEXITY"])
-    # branch coverage measures the paths cc counts; methods without branches
-    # have no BRANCH counter, and for them (cc = 1) line coverage is equivalent
-    missed, covered = counters.get("BRANCH", counters["LINE"])
-    return int(m.get("line")), m.get("name"), cc, covered / (missed + covered)
-
-
-def with_ranges(entries):
-    """Attach last_line = start of next entry - 1; the last entry is open-ended."""
-    entries = sorted(entries)
-    for i, (first, cls, name, cc, coverage) in enumerate(entries):
-        last = entries[i + 1][0] - 1 if i + 1 < len(entries) else float("inf")
-        yield cls, name, first, last, cc, coverage
-
-
-def methods(report, include_lambdas=False):
-    """Yield (source_key, class, name, first_line, last_line, cc, coverage).
-
-    Ranges are computed per source file, so a method of an inner class ends
-    the range of the outer class's preceding method.
-    """
-    per_file = defaultdict(list)
-    for package in ET.parse(report).iter("package"):
-        for cls in package.findall("class"):
-            key = package.get("name") + "/" + cls.get("sourcefilename")
-            for m in cls.findall("method"):
-                first, name, cc, coverage = method_entry(m)
-                per_file[key].append((first, cls.get("name"), name, cc, coverage))
-    for key, entries in per_file.items():
-        named = [e for e in entries if not is_lambda(e[2])]
-        lambdas = [e for e in entries if is_lambda(e[2])] if include_lambdas else []
-        # lambdas live inside a named method and must not cut its range
-        for group in (named, lambdas):
-            for row in with_ranges(group):
-                yield (key,) + row
-
-
-def crap(cc, coverage):
-    return cc * cc * (1 - coverage) ** 3 + cc
-
-
-def score(report, diff, include_lambdas=False):
-    added = added_lines(diff)
-    rows = []
-    for key, cls, name, first, last, cc, coverage in methods(report, include_lambdas):
-        if any(first <= n <= last for n in added.get(key, ())):
-            rows.append((cls, name, cc, coverage, crap(cc, coverage)))
-    return rows
-
-
-def main(report, diff, threshold, include_lambdas, out):
-    rows = sorted(score(report, diff, include_lambdas), key=lambda r: -r[4])
-    failed = [r for r in rows if r[4] >= threshold]
-    out.write(f"{'CRAP':>7} {'cc':>3} {'cov':>5}  method\n")
-    for cls, name, cc, coverage, value in rows:
-        flag = " !" if value >= threshold else ""
-        out.write(f"{value:7.1f} {cc:3d} {coverage:5.0%}  {cls}.{name}{flag}\n")
-    out.write(f"\n{len(rows)} changed methods, {len(failed)} at or above {threshold}\n")
-    return 1 if failed else 0
-
-
-def reject_stale_report(report, changed_files):
-    """A report older than a changed source describes other code: refuse it."""
+def detect(root="."):
+    """Name the language of the project in `root`, from its build file."""
     import os
-    report_time = os.path.getmtime(report)
-    stale = [f for f in changed_files
-             if os.path.exists(f) and os.path.getmtime(f) > report_time]
-    if stale:
-        raise SystemExit(
-            f"{report} is older than changed source {stale[0]}; "
-            "rebuild the report (mvn verify jacoco:report)")
+    for lang in ORDER:
+        if os.path.exists(os.path.join(root, LANGUAGES[lang].marker)):
+            return lang
+    for marker, name in UNSUPPORTED.items():
+        if os.path.exists(os.path.join(root, marker)):
+            raise SystemExit(f"{name} is not supported by crap-score")
+    raise SystemExit(
+        "no pom.xml, go.mod, Cargo.toml or package.json found; "
+        "give --lang explicitly")
+
+
+def git(*args):
+    return subprocess.run(["git", *args], check=True,
+                          capture_output=True, text=True).stdout
+
+
+def changed_sources(rev_range, patterns):
+    return git("diff", "--name-only", rev_range, "--", *patterns).split()
 
 
 def cli(argv=None):
     import argparse
-    import subprocess
-    import sys
 
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--report", required=True, help="JaCoCo XML report")
+    p.add_argument("--lang", choices=sorted(LANGUAGES), help="default: detect")
+    p.add_argument("--report", help="coverage report of the language")
+    p.add_argument("--records", help="skip the collector, read JSON lines")
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--diff", help="unified diff file, or '-' for stdin")
     src.add_argument("--range", help="git revision range, e.g. origin/main...HEAD")
     p.add_argument("--threshold", type=float, default=8)
-    p.add_argument("--include-lambdas", action="store_true")
+    p.add_argument("--include-lambdas", action="store_true",
+                   help="Java only: score lambdas as their own methods")
     a = p.parse_args(argv)
 
+    lang = a.lang or detect()
+    spec = LANGUAGES[lang]
+    report = a.report or spec.report
+
     if a.range:
-        git = lambda *args: subprocess.run(
-            ["git", *args], check=True, capture_output=True, text=True).stdout
-        reject_stale_report(
-            a.report, git("diff", "--name-only", a.range, "--", "*.java").split())
-        diff = io.StringIO(git("diff", "-U0", a.range, "--", "*.java"))
+        changed = changed_sources(a.range, spec.sources)
+        if not a.records:
+            crap_core.reject_stale_report(report, changed)
+        diff = io.StringIO(git("diff", "-U0", a.range, "--", *spec.sources))
     elif a.diff == "-":
         diff = sys.stdin
     else:
         diff = open(a.diff)
-    with open(a.report) as report:
-        return main(report, diff, a.threshold, a.include_lambdas, sys.stdout)
+
+    if a.records:
+        records = open(a.records)
+    else:
+        collector = importlib.import_module(spec.module)
+        records = collector.collect(report, include_lambdas=a.include_lambdas)
+    return crap_core.main(records, diff, a.threshold, sys.stdout)
 
 
 if __name__ == "__main__":
