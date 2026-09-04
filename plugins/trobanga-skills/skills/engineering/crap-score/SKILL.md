@@ -41,9 +41,11 @@ the coverage kind and appears in the footer of the table.
 2. Score the branch:
 
        python3 ~/.agents/skills/engineering/crap-score/scripts/crap_score.py \
-         --report <report> --range origin/main...HEAD --threshold 8
+         --range origin/main...HEAD --threshold 8
 
-   `--lang java|go|rust|ts` overrides the detected project type.
+   `--report` gives the report path. Only Java needs it, because the
+   report lies in the module. `--lang java|go|rust|ts` overrides the
+   detected project type.
    `--diff FILE` or `--diff -` takes a unified diff instead of a range.
    With `--range`, the script fails when the report is older than a
    changed source file. Rebuild the report then.

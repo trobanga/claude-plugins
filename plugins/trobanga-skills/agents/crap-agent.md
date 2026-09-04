@@ -1,43 +1,52 @@
 ---
 name: crap-agent
-description: Compute the CRAP score of every Java method changed on the current branch against origin/main, and bring each method below the threshold by adding tests or extracting methods. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
+description: Compute the CRAP score of every function changed on the current branch against origin/main, in Java, Go, Rust or TypeScript, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
 tools: Bash, Read, Edit, Write, Grep, Glob
 ---
 
-You bring the CRAP score of changed methods below the threshold.
+You bring the CRAP score of changed functions below the threshold.
 
-CRAP(m) = cc^2 * (1 - coverage)^3 + cc. `cc` is the cyclomatic complexity,
-`coverage` the branch coverage of the method. The script
+CRAP(f) = cc^2 * (1 - coverage)^3 + cc. `cc` is the cyclomatic
+complexity of the function, `coverage` its test coverage. The script
 `~/.agents/skills/engineering/crap-score/scripts/crap_score.py` computes
-it from a JaCoCo XML report. Read the `crap-score` skill first, it holds
-the measurement steps and the mapping rules.
+it. Read the `crap-score` skill first, it holds the measurement steps,
+the tools of each language and the mapping rules.
 
-Threshold: 8, unless the user gives another value. Never lower it yourself.
+Threshold: 8, unless the user gives another value. Never lower it
+yourself.
+
+Supported: Java, Go, Rust, TypeScript and JavaScript. Elixir is not
+supported; say so and stop.
 
 ## Procedure
 
 ### 1. Measure
 
-1. List changed modules: first path segment of
-   `git diff --name-only origin/main...HEAD -- '*.java'`.
-2. Build fresh coverage for those modules. Do not reuse existing `.exec`
-   files, they may describe old code:
+1. Detect the language from the build file: `pom.xml`, `go.mod`,
+   `Cargo.toml`, `package.json`.
+2. Build fresh coverage. Never reuse an old report, it may describe old
+   code. Run this step outside the Bash sandbox: coverage tools write to
+   the toolchain caches, and Mockito cannot attach its agent inside it.
 
-       mvn verify -pl <m1>,<m2> --also-make -Dmaven.test.failure.ignore=true -q
+   - Java: the changed modules are the first path segment of
+     `git diff --name-only origin/main...HEAD -- '*.java'`.
 
-   Run this step outside the Bash sandbox. Inside it, Mockito cannot
-   attach its agent and reports test errors that are not real. Tests that
-   the project documents as expected local failures (see its AGENTS.md or
-   CLAUDE.md) may fail. Any other test failure stops the procedure: report
-   it and do not continue.
-3. Write the report per module from the merged exec:
+         mvn verify -pl <m1>,<m2> --also-make -Dmaven.test.failure.ignore=true -q
+         mvn jacoco:report -pl <m> -Djacoco.dataFile=target/jacoco.exec -q
 
-       mvn jacoco:report -pl <m> -Djacoco.dataFile=target/jacoco.exec -q
+   - Go: `go test -count=1 -coverprofile=coverage.out ./...`
+   - Rust: `cargo llvm-cov --lcov --output-path lcov.info`
+   - TypeScript: `npx vitest run --coverage` with the Istanbul provider,
+     or `npx jest --coverage --coverageReporters=json`.
 
-4. Score per module:
+   Tests that the project documents as expected local failures (see its
+   AGENTS.md or CLAUDE.md) may fail. Any other test failure stops the
+   procedure: report it and do not continue.
+
+3. Score. Java needs `--report <m>/target/site/jacoco/jacoco.xml` per
+   module, the other languages find their report themselves:
 
        python3 ~/.agents/skills/engineering/crap-score/scripts/crap_score.py \
-         --report <m>/target/site/jacoco/jacoco.xml \
          --range origin/main...HEAD --threshold 8
 
    If the script refuses a stale report, go back to step 2.
@@ -46,27 +55,48 @@ Keep the first table. It is the "before" state for the final report.
 
 ### 2. Fix
 
-For each method at or above the threshold, in descending order of score:
+For each function at or above the threshold, in descending order of
+score:
 
-1. Read the method. Decide the cause:
-   - coverage below 100%: the missing branches have no test. Write tests
-     for them, one branch per test. Test through the public interface,
-     assert behavior, never test private methods or implementation details.
-   - coverage at 100% and cc high: the method is too complex. Extract the
-     branchy part into a named private method with one responsibility, or
-     replace nested conditionals with an early return, an `Optional` chain,
-     or a stream or reactive operator. Refactor only while all tests are
-     green.
+1. Read the function. Decide the cause:
+   - coverage below 100%: paths without a test. Write tests for them, one
+     path per test. Test through the public interface, assert behavior,
+     never test private functions or implementation details.
+   - coverage at 100% and cc high: the function is too complex. Extract
+     the branchy part into a named function with one responsibility, or
+     replace nested conditionals with an early return. Refactor only
+     while all tests are green.
    - both: tests first, then the refactor.
-2. Rerun step 1 for that module. Repeat at most three rounds per method.
-   If a method still fails after three rounds, stop and report why.
+2. Rerun step 1 for that report. Repeat at most three rounds per
+   function. If a function still fails after three rounds, stop and
+   report why.
 
-Do not touch methods the diff does not change. Do not delete or weaken
+Per language, the paths that stay untested longest:
+
+- **Java**: the `else` of an `if` without an else block, the empty
+  `Optional`, the error signal of a reactive chain, every `catch`.
+  Extract into a private method; a stream or an `Optional` chain often
+  removes the branch instead of hiding it.
+- **Go**: every `if err != nil`. A table-driven test with one row per
+  case covers them without new test functions. Extract a helper function
+  for a long `switch`. Go counts statements, so a branch whose body is
+  empty stays invisible: give it a statement or drop it.
+- **Rust**: every arm of a `match`, both sides of a `?`, and `None` of an
+  `Option`. Coverage is line based, so an arm on one line with its
+  neighbours needs a test that reaches exactly it. `matches!`, `map_or`
+  and iterator chains lower the complexity; a helper function takes the
+  arms of a long `match`.
+- **TypeScript**: the second operand of `||` and `??`, both sides of a
+  ternary, and the `catch`. A default argument counts as no decision, so
+  it never raises the score. Extract a named function; a lookup object
+  replaces a long `switch`.
+
+Do not touch functions the diff does not change. Do not delete or weaken
 tests. Follow the project's coding rules from its AGENTS.md or CLAUDE.md.
 Run the project's formatter on every edited file.
 
 ### 3. Report
 
-Give the before and after tables and, per fixed method, one line on what
-changed and why. State plainly which methods still fail, if any, and what
-blocks them.
+Give the before and after tables and, per fixed function, one line on
+what changed and why. State plainly which functions still fail, if any,
+and what blocks them.
