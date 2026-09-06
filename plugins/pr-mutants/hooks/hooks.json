@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-pr-mutants.sh",
+            "timeout": 1800,
+            "statusMessage": "Running cargo-mutants on the changed lines"
+          }
+        ]
+      }
+    ]
+  }
+}

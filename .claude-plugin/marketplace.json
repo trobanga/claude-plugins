@@ -21,6 +21,12 @@
       "source": "./plugins/trobanga-skills",
       "description": "trobanga personal skills: workflow, docs, architecture, gamedev, and engineering skills",
       "version": "0.1.0"
+    },
+    {
+      "name": "pr-mutants",
+      "source": "./plugins/pr-mutants",
+      "description": "Run cargo-mutants on the changed lines before `gh pr create` and block the PR while a mutant survives",
+      "version": "0.1.0"
     }
   ]
 }
