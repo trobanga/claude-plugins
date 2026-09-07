@@ -3,6 +3,8 @@
   "description": "Run cargo-mutants on the changed lines before `gh pr create` and block the PR while a mutant survives",
   "version": "0.1.0",
   "author": {
-    "name": "trobanga"
-  }
+    "name": "Daniel Hahne",
+    "email": "daniel@trobanga.de"
+  },
+  "license": "Apache-2.0"
 }

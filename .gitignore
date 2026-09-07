@@ -1,1 +1,14 @@
+# Local Claude Code state (settings.local.json, worktrees, scheduled tasks)
+.claude/
+
+# Python / type-checker caches
 __pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Editor and OS
+.idea/
+.vscode/
+.DS_Store

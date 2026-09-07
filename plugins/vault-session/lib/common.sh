@@ -10,6 +10,8 @@
 #
 # Globals set by hook_init: VAULT, LOGS_DIR, HOOK_INPUT, HOOK_CWD, HOOK_SID
 
+# This file is sourced. The globals below are read by the hook scripts.
+# shellcheck disable=SC2034
 VAULT="${VAULT_DIR:-$HOME/code/vault}"
 LOGS_DIR="$VAULT/logs"
 PENDING_MARKER="_summary generating in background_"

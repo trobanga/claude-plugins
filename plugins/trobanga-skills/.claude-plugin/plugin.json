@@ -8,6 +8,8 @@
     "./skills/productivity"
   ],
   "author": {
-    "name": "trobanga"
-  }
+    "name": "Daniel Hahne",
+    "email": "daniel@trobanga.de"
+  },
+  "license": "Apache-2.0"
 }

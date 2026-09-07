@@ -9,6 +9,7 @@ if ! grep -q excoveralls mix.exs; then
 fi
 
 echo "Running tests with coverage..."
+# shellcheck disable=SC2209  # MIX_ENV=test is an environment prefix, not an assignment
 MIX_ENV=test mix coveralls.lcov
 
 echo "Generating patch coverage report..."
