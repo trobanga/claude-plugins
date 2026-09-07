@@ -1,22 +1,11 @@
 {
   "name": "trobanga",
-  "description": "Claude Code plugins for documentation, test-driven development, coverage and mutation gates, game development, and session logging",
+  "description": "Claude Code plugins for test-driven development, coverage and mutation gates, architecture review, and game development",
   "owner": {
     "name": "Daniel Hahne",
     "email": "daniel@trobanga.de"
   },
   "plugins": [
-    {
-      "name": "vault-session",
-      "source": "./plugins/vault-session",
-      "description": "Vault session lifecycle: load recent logs on SessionStart, write log stub on SessionEnd",
-      "version": "0.1.0",
-      "author": {
-        "name": "Daniel Hahne",
-        "email": "daniel@trobanga.de"
-      },
-      "license": "Apache-2.0"
-    },
     {
       "name": "trobanga-skills",
       "source": "./plugins/trobanga-skills",
