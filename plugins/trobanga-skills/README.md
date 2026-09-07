@@ -83,9 +83,9 @@ Most skills need only `git`. These need more:
 
 ## Credits
 
-> "Good artists copy, great artists steal."
+> "Good coders copy, great coders steal."
 >
-> — attributed to Pablo Picasso
+> — after the line attributed to Pablo Picasso
 
 These fourteen skills are derived from
 [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock:
