@@ -51,6 +51,28 @@ Open an issue or a pull request. When you change a plugin, bump the `version` in
 both `plugins/<name>/.claude-plugin/plugin.json` and the matching entry in
 `.claude-plugin/marketplace.json`. CI checks that the two agree.
 
+## Credits
+
+> "Good artists copy, great artists steal."
+>
+> — attributed to Pablo Picasso
+
+Fourteen skills in `trobanga-skills` are derived from
+[mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock. Some
+are close to the original, some are rewritten, all started there:
+
+`claude-handoff`, `conformance-review`, `domain-modeling`, `grill-with-docs`,
+`grilling`, `handoff`, `improve-codebase-architecture`, `prototype`, `research`,
+`tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
+
+That work is MIT licensed. The notice is at
+[LICENSES/mattpocock-skills-MIT.txt](LICENSES/mattpocock-skills-MIT.txt), and it
+governs those skills. Everything else here is Apache-2.0.
+
+`improve-codebase-architecture` also draws on "Design It Twice" from John
+Ousterhout, *A Philosophy of Software Design*.
+
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0, except the skills credited above. See [LICENSE](LICENSE) and
+[LICENSES/](LICENSES).

@@ -81,6 +81,26 @@ Most skills need only `git`. These need more:
   `cargo-tarpaulin`, ExCoveralls).
 - `gh-issue`, `gh-issue-cleanup`: the `gh` command line program.
 
+## Credits
+
+> "Good artists copy, great artists steal."
+>
+> — attributed to Pablo Picasso
+
+These fourteen skills are derived from
+[mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock:
+
+`claude-handoff`, `conformance-review`, `domain-modeling`, `grill-with-docs`,
+`grilling`, `handoff`, `improve-codebase-architecture`, `prototype`, `research`,
+`tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
+
+They stay under his MIT licence. See
+[LICENSES/mattpocock-skills-MIT.txt](../../LICENSES/mattpocock-skills-MIT.txt).
+
+`improve-codebase-architecture` also draws on "Design It Twice" from John
+Ousterhout, *A Philosophy of Software Design*.
+
 ## License
 
-Apache-2.0. See the [LICENSE](../../LICENSE) at the repository root.
+The skills credited above are MIT, per their upstream licence. Everything else
+is Apache-2.0. See the [LICENSE](../../LICENSE) at the repository root.
