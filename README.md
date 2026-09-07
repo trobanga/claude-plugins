@@ -21,7 +21,6 @@ Claude Code reads the plugins from the default branch. To get updates, run
 
 | Plugin | Version | What it does |
 | --- | --- | --- |
-| [c4ai](plugins/c4ai) | 0.3.0 | Layered project documentation for AI and humans, based on the C4 model. Eight slash commands. Needs the `c4ai` binary, which is not published yet. |
 | [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 30+ skills: TDD, coverage, CRAP score, architecture review, Bevy, Godot, Unity, writing. |
 | [pr-mutants](plugins/pr-mutants) | 0.1.0 | Runs `cargo-mutants` on the changed lines before `gh pr create` and blocks the PR while a mutant survives. |
 | [vault-session](plugins/vault-session) | 0.1.0 | Writes a session log into an Obsidian vault on SessionEnd and loads recent logs on SessionStart. |
@@ -41,7 +40,7 @@ you install these two plugins:
 Both plugins can spawn `claude -p` in the background. Each plugin README lists
 the environment variables that disable this.
 
-`c4ai` and `trobanga-skills` install no hooks.
+`trobanga-skills` installs no hooks.
 
 ## Repository layout
 
