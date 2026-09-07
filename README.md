@@ -55,7 +55,7 @@ both `plugins/<name>/.claude-plugin/plugin.json` and the matching entry in
 
 > "Good coders copy, great coders steal."
 >
-> — after the line attributed to Pablo Picasso
+> — attributed to Pablo Picasso
 
 Fourteen skills in `trobanga-skills` are derived from
 [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock. Some
