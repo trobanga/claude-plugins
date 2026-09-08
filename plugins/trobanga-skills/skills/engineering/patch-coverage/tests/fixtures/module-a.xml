@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<report name="module-a">
+  <package name="com/example/a">
+    <class name="com/example/a/Alpha" sourcefilename="Alpha.java">
+      <method name="check" desc="(I)Z" line="7">
+        <counter type="BRANCH" missed="1" covered="1"/>
+        <counter type="LINE" missed="0" covered="2"/>
+      </method>
+      <counter type="BRANCH" missed="1" covered="1"/>
+      <counter type="LINE" missed="0" covered="2"/>
+      <counter type="METHOD" missed="0" covered="1"/>
+    </class>
+    <sourcefile name="Alpha.java">
+      <line nr="7" mi="0" ci="4" mb="1" cb="1"/>
+      <line nr="8" mi="0" ci="2" mb="0" cb="0"/>
+    </sourcefile>
+  </package>
+</report>

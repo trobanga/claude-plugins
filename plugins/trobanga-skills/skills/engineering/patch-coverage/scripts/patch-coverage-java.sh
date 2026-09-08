@@ -69,33 +69,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JACOCO_SCRIPT="$SCRIPT_DIR/jacoco-coverage.py"
 
 if [[ -x "$JACOCO_SCRIPT" ]]; then
-    # Build filter patterns from changed class names
-    CHANGED_CLASSES=$(echo "$CHANGED_FILES" | sed 's|.*/||; s|\.java$||' | sort -u)
+    # Build one --filter argument per changed class name
+    FILTER_ARGS=()
+    for cls in $(echo "$CHANGED_FILES" | sed 's|.*/||; s|\.java$||' | sort -u); do
+        FILTER_ARGS+=(--filter "$cls")
+    done
 
     echo ""
     echo "=== Per-Class Branch Analysis (changed files only) ==="
-    for xml in $COVERAGE_FILES; do
-        for cls in $CHANGED_CLASSES; do
-            "$JACOCO_SCRIPT" "$xml" --filter "$cls" --branches-only 2>/dev/null | grep -v "^===" | grep -v "^$" | grep -v "None!" || true
-        done
-    done
 
-    # Show summary if any missed branches were found
-    HAS_GAPS=false
-    for xml in $COVERAGE_FILES; do
-        for cls in $CHANGED_CLASSES; do
-            if "$JACOCO_SCRIPT" "$xml" --filter "$cls" --branches-only 2>/dev/null | grep -q "missing"; then
-                HAS_GAPS=true
-                break 2
-            fi
-        done
-    done
+    # The script exits 2 if it finds a missed branch, 0 if it finds none.
+    RC=0
+    # shellcheck disable=SC2086
+    "$JACOCO_SCRIPT" $COVERAGE_FILES "${FILTER_ARGS[@]}" --branches-only --quiet || RC=$?
 
-    if $HAS_GAPS; then
-        echo ""
-        echo "Tip: Run for details on a specific class:"
-        echo "  $JACOCO_SCRIPT <jacoco.xml> --filter ClassName"
-    else
-        echo "All changed classes have full branch coverage."
-    fi
+    case $RC in
+        0)
+            echo "All changed classes have full branch coverage."
+            ;;
+        2)
+            echo ""
+            echo "Tip: Run for details on a specific class:"
+            echo "  $JACOCO_SCRIPT <jacoco.xml> --filter ClassName"
+            ;;
+        *)
+            echo "Branch analysis failed (exit $RC)"
+            ;;
+    esac
 fi

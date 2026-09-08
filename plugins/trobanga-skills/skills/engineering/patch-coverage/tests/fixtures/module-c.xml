@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<report name="module-c">
+  <package name="com/example/c">
+    <class name="com/example/c/Order" sourcefilename="Order.java">
+      <method name="total" desc="()I" line="5">
+        <counter type="BRANCH" missed="1" covered="1"/>
+      </method>
+      <counter type="BRANCH" missed="1" covered="1"/>
+    </class>
+    <class name="com/example/c/OrderService" sourcefilename="OrderService.java">
+      <method name="place" desc="()V" line="9">
+        <counter type="BRANCH" missed="3" covered="0"/>
+      </method>
+      <counter type="BRANCH" missed="3" covered="0"/>
+    </class>
+    <class name="com/example/c/Outer$Inner" sourcefilename="Outer.java">
+      <method name="decide" desc="(Z)Z" line="14">
+        <counter type="BRANCH" missed="2" covered="0"/>
+      </method>
+      <counter type="BRANCH" missed="2" covered="0"/>
+    </class>
+    <sourcefile name="Order.java">
+      <line nr="5" mi="0" ci="4" mb="1" cb="1"/>
+    </sourcefile>
+    <sourcefile name="OrderService.java">
+      <line nr="9" mi="2" ci="0" mb="3" cb="0"/>
+    </sourcefile>
+    <sourcefile name="Outer.java">
+      <line nr="14" mi="0" ci="2" mb="2" cb="0"/>
+    </sourcefile>
+  </package>
+</report>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<report name="module-b">
+  <package name="com/example/b">
+    <class name="com/example/b/Beta" sourcefilename="Beta.java">
+      <method name="run" desc="()V" line="4">
+        <counter type="BRANCH" missed="0" covered="2"/>
+        <counter type="LINE" missed="0" covered="3"/>
+      </method>
+      <counter type="BRANCH" missed="0" covered="2"/>
+      <counter type="LINE" missed="0" covered="3"/>
+      <counter type="METHOD" missed="0" covered="1"/>
+    </class>
+    <class name="com/example/b/Gamma" sourcefilename="Gamma.java">
+      <method name="pick" desc="(I)I" line="11">
+        <counter type="BRANCH" missed="2" covered="0"/>
+        <counter type="LINE" missed="1" covered="1"/>
+      </method>
+      <counter type="BRANCH" missed="2" covered="0"/>
+      <counter type="LINE" missed="1" covered="1"/>
+      <counter type="METHOD" missed="0" covered="1"/>
+    </class>
+    <sourcefile name="Beta.java">
+      <line nr="4" mi="0" ci="6" mb="0" cb="2"/>
+    </sourcefile>
+    <sourcefile name="Gamma.java">
+      <line nr="11" mi="0" ci="3" mb="2" cb="0"/>
+    </sourcefile>
+  </package>
+</report>
