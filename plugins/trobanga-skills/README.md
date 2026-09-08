@@ -24,7 +24,6 @@ The plugin installs no hooks.
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `CONTEXT.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
-| `c4-diff` | Draws before/after/diff C4 component diagrams in Mermaid between two commits. |
 | `gh-issue` | Works a GitHub issue in a fresh worktree: claim, explore, design, test-first, PR. |
 | `gh-issue-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
 | `orchestrate` | Slices a locked spec into vertical slices and decides per slice whether to delegate. |
