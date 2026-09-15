@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Break a plan, spec, or conversation into a set of **tickets** — tracer-bullet vertical slices, each declaring the tickets that **block** it.
 
-The issue tracker and triage label vocabulary should have been provided to you. If not, ask the user which tracker to use before you publish anything.
+The project's issue tracker is recorded in `.agents/issue-tracker.md`, in `.agents/issue-tracker.local.md`, or as prose in `CLAUDE.md`. If none of them says, ask the user which tracker to use before you publish anything, and offer `Skill(trobanga-skills:setup-project)` to record the answer.
 
 ## Process
 

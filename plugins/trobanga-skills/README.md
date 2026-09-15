@@ -24,8 +24,10 @@ The plugin installs no hooks.
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `CONTEXT.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
-| `gh-issue` | Works a GitHub issue in a fresh worktree: claim, explore, design, test-first, PR. |
-| `gh-issue-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
+| `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, PR. GitHub, Linear or beads. |
+| `gh-issue` | Entry point that calls `implement` with tracker and forge preset to GitHub. |
+| `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
+| `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
 | `orchestrate` | Slices a locked spec into vertical slices and decides per slice whether to delegate. |
 | `wayfinder` | Maps work too large for one session as a set of decision tickets. |
 | `to-spec` | Turns the current conversation into a spec and files it in the issue tracker. |
@@ -78,7 +80,9 @@ Most skills need only `git`. These need more:
 - `patch-coverage`, `improve-coverage`, `crap-score`: `python3`, `diff-cover`,
   and the coverage tool of the language (JaCoCo, `go test -cover`,
   `cargo-tarpaulin`, ExCoveralls).
-- `gh-issue`, `gh-issue-cleanup`: the `gh` command line program.
+- `implement`, `gh-issue`, `worktree-cleanup`: `git`, plus the tool of the tracker in use —
+  the `gh` command line program for GitHub, the `bd` command line program for beads, or a
+  connected Linear MCP server for Linear.
 
 ## Credits
 
