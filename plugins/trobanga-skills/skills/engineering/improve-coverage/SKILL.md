@@ -22,7 +22,8 @@ The skill arguments are optional:
 ### Step 1: Detect the project type
 
 The scripts live in the sibling `patch-coverage` skill, under
-`~/.agents/skills/engineering/patch-coverage/scripts/` (written as `$S` in the table below).
+`${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/` (written as `$S` in the
+table below).
 
 | Indicator    | Language | Coverage script                | Test guidance                                                                 |
 |--------------|----------|--------------------------------|-------------------------------------------------------------------------------|

@@ -19,26 +19,27 @@ Compute patch coverage for the current branch compared to origin/main.
 
 Detect project type and run appropriate script:
 
-The scripts ship with this skill, in `~/.agents/skills/engineering/patch-coverage/scripts/`.
+The scripts ship with this skill, in
+`${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/`.
 
 1. If `pom.xml` exists (Java):
    ```bash
-   ~/.agents/skills/engineering/patch-coverage/scripts/patch-coverage-java.sh
+   "${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/patch-coverage-java.sh"
    ```
 
 2. If `go.mod` exists (Go):
    ```bash
-   ~/.agents/skills/engineering/patch-coverage/scripts/patch-coverage-go.sh
+   "${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/patch-coverage-go.sh"
    ```
 
 3. If `Cargo.toml` exists (Rust):
    ```bash
-   ~/.agents/skills/engineering/patch-coverage/scripts/patch-coverage-rust.sh
+   "${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/patch-coverage-rust.sh"
    ```
 
 4. If `mix.exs` exists (Elixir):
    ```bash
-   ~/.agents/skills/engineering/patch-coverage/scripts/patch-coverage-elixir.sh
+   "${CLAUDE_PLUGIN_ROOT}/skills/engineering/patch-coverage/scripts/patch-coverage-elixir.sh"
    ```
 
 If none match, tell the user the project type is not supported and stop.

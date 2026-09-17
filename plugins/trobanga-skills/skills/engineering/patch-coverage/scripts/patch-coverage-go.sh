@@ -2,7 +2,7 @@
 set -e
 
 echo "Running tests with coverage..."
-go test -count=1 -coverpkg=./internal/... -coverprofile=coverage.out ./tests/...
+go test -count=1 -coverpkg=./internal/... -coverprofile=coverage.out ./...
 
 echo "Converting to Cobertura format..."
 gocover-cobertura < coverage.out > coverage.xml

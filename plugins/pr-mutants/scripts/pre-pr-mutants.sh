@@ -9,6 +9,10 @@
 #   - the repository root has no Cargo.toml,
 #   - cargo-mutants is not installed.
 # PR_MUTANTS_BASE overrides the base ref (default: origin/HEAD, else origin/main).
+# PR_MUTANTS_TMPDIR overrides where cargo-mutants copies the tree (default:
+# $HOME/.cache/mutants-tmp). cargo-mutants honours TMPDIR, and the system /tmp
+# is often a small tmpfs that a full test build fills; a session's settings
+# "env" does not reliably reach this hook, so the path is set here.
 set -u
 
 command=$(jq -r '.tool_input.command // ""')
@@ -19,6 +23,9 @@ root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 1
 [ -f Cargo.toml ] || exit 0
 cargo mutants --version >/dev/null 2>&1 || exit 0
+
+export TMPDIR="${PR_MUTANTS_TMPDIR:-$HOME/.cache/mutants-tmp}"
+mkdir -p "$TMPDIR" || exit 1
 
 base=${PR_MUTANTS_BASE:-$(git symbolic-ref -q --short refs/remotes/origin/HEAD || echo origin/main)}
 
