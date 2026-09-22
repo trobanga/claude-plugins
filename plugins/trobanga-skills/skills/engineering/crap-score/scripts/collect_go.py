@@ -18,7 +18,7 @@ import crap_core
 
 HELPER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "crap_funcs.go")
 
-BLOCK = re.compile(r"^(.+):(\d+)\.\d+,(\d+)\.\d+ (\d+) (\d+)$")
+BLOCK = re.compile(r"^(.+):(\d+)\.(\d+),(\d+)\.(\d+) (\d+) (\d+)$")
 
 
 def module_path(root="."):
@@ -31,19 +31,30 @@ def module_path(root="."):
 
 
 def parse_profile(profile, module):
-    """Map a repository-relative path -> [(start, end, statements, count)]."""
-    blocks = {}
+    """Map a repository-relative path -> [(start, end, statements, count)].
+
+    A profile holds one line per block per test binary, so `-coverpkg` gives
+    more than one line for the same block. Such lines become one block, and
+    their counts add up, as `go tool cover` folds them together.
+
+    Two different blocks can share a line range, because a source line can
+    hold more than one block. The columns keep them apart.
+    """
+    merged = {}
     prefix = module + "/"
     for line in profile:
         m = BLOCK.match(line.strip())
         if not m:
             continue
-        name, start, end, stmts, count = m.groups()
+        name, start, scol, end, ecol, stmts, count = m.groups()
         if not name.startswith(prefix):
             continue  # a file of a dependency, not of this module
-        blocks.setdefault(name[len(prefix):], []).append(
-            (int(start), int(end), int(stmts), int(count)))
-    return blocks
+        counts = merged.setdefault(name[len(prefix):], {})
+        key = (int(start), int(scol), int(end), int(ecol), int(stmts))
+        counts[key] = counts.get(key, 0) + int(count)
+    return {path: [(start, end, stmts, count)
+                   for (start, _sc, end, _ec, stmts), count in counts.items()]
+            for path, counts in merged.items()}
 
 
 def coverage_of(function, blocks):
