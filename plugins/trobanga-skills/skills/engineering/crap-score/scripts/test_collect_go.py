@@ -14,6 +14,20 @@ PROFILE = dedent("""\
     github.com/dep/lib/dep.go:1.1,2.2 1 1
     """)
 
+# Two test binaries report on the same file, as `-coverpkg` makes them do.
+# The second binary covers the block that the first one misses.
+DUPLICATE_PROFILE = dedent("""\
+    mode: set
+    example.com/m/grade.go:5.35,6.16 1 1
+    example.com/m/grade.go:6.16,8.3 1 1
+    example.com/m/grade.go:9.16,11.3 1 0
+    example.com/m/grade.go:12.2,12.10 1 1
+    example.com/m/grade.go:5.35,6.16 1 0
+    example.com/m/grade.go:6.16,8.3 1 0
+    example.com/m/grade.go:9.16,11.3 1 1
+    example.com/m/grade.go:12.2,12.10 1 0
+    """)
+
 FUNCTIONS = [
     {"file": "grade.go", "name": "main.Of", "start": 5, "end": 13, "cc": 3},
     {"file": "other/util.go", "name": "other.Trim", "start": 3, "end": 5,
@@ -63,6 +77,43 @@ class RecordTest(unittest.TestCase):
         rows = list(collect_go.records(gone, collect_go.parse_profile(
             io.StringIO(PROFILE), "example.com/m")))
         self.assertEqual(0.0, rows[0]["coverage"])
+
+
+class DuplicateBlockTest(unittest.TestCase):
+
+    def records(self):
+        return {r["name"]: r for r in collect_go.records(
+            FUNCTIONS, collect_go.parse_profile(
+                io.StringIO(DUPLICATE_PROFILE), "example.com/m"))}
+
+    def test_the_counts_of_the_lines_of_one_block_add_up(self):
+        blocks = collect_go.parse_profile(
+            io.StringIO(DUPLICATE_PROFILE), "example.com/m")
+        self.assertEqual([(5, 6, 1, 1), (6, 8, 1, 1), (9, 11, 1, 1),
+                          (12, 12, 1, 1)], sorted(blocks["grade.go"]))
+
+    def test_a_block_counts_one_time_however_many_binaries_report_it(self):
+        # all four blocks run, each one in one of the two binaries
+        self.assertEqual(1.0, self.records()["main.Of"]["coverage"])
+
+    def test_a_block_that_no_binary_runs_stays_uncovered(self):
+        profile = DUPLICATE_PROFILE.replace(
+            "grade.go:12.2,12.10 1 1", "grade.go:12.2,12.10 1 0")
+        rows = {r["name"]: r for r in collect_go.records(
+            FUNCTIONS, collect_go.parse_profile(
+                io.StringIO(profile), "example.com/m"))}
+        self.assertEqual(0.75, rows["main.Of"]["coverage"])
+
+    def test_two_blocks_of_one_source_line_stay_apart(self):
+        # equal lines, different columns: `switch x { case 1: a(); }`
+        profile = dedent("""\
+            mode: set
+            example.com/m/grade.go:6.16,6.30 1 1
+            example.com/m/grade.go:6.32,6.46 1 0
+            """)
+        rows = list(collect_go.records(FUNCTIONS, collect_go.parse_profile(
+            io.StringIO(profile), "example.com/m")))
+        self.assertEqual(0.5, rows[0]["coverage"])
 
 
 if __name__ == "__main__":
