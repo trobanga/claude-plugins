@@ -261,6 +261,11 @@ If T1 errors, handle it per **Error Handling** below.
 
 ## Phase 5 — Ship
 
+> **One commit per pull request.** The branch carries exactly one commit. If an earlier phase
+> (for example the TDD loop) made more than one, squash them into one before you push. Every
+> later fix — from a reviewer agent, from **F4**, or from any other part of the workflow —
+> amends that commit. Do not add a fix as an extra commit.
+
 18. **Commit, push and open the pull request** per **F2** and **F3**, passing `--signoff`
     (required for all commits in this environment). The PR body must carry the **T5** close
     reference.
@@ -279,9 +284,9 @@ If T1 errors, handle it per **Error Handling** below.
     migrations, auth or security-relevant code, data handling). The full review already ran in
     step 17; for routine changes, skip this and finish. If it runs and finds high-severity
     issues, fix them:
-    - Prefer new follow-up commits: review history stays readable and no rewrite is needed.
-    - If you do amend or rebase already-pushed commits, force-push with `--force-with-lease`,
-      never `--force`.
+    - Amend the fix into the single commit with `git commit --amend --signoff`. Never add a
+      follow-up commit.
+    - Push with `--force-with-lease`, never `--force`.
     - Re-request review after pushing fixes.
 
 ---
