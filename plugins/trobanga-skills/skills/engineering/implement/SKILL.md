@@ -231,8 +231,16 @@ If T1 errors, handle it per **Error Handling** below.
 
     Follow the codebase's existing conventions over general best practice.
 
-15. **Simplify** with `/simplify`, which reviews the changed code for reuse, simplification
-    and efficiency and applies the fixes. It does not hunt for bugs — step 17 does.
+15. **Simplify** with `/simplify`, which reviews the changed code for reuse, simplification,
+    efficiency and altitude and applies the fixes. It does not hunt for bugs — step 17 does.
+
+    **This step is conditional.** `/simplify` launches four review agents, so skip it when the
+    non-test diff against the default branch is small — roughly under 50 changed lines. Report
+    one line — "Simplify step skipped: small diff" — and continue.
+
+    `/simplify` edits code that already passed its tests. When it finishes, run the test suite
+    again. If a test fails, revert the `/simplify` edit that broke it rather than patching
+    around it.
 
 16. **Drive the CRAP score down** with the `trobanga-skills:crap-agent` agent. It measures
     every function changed against the default branch and brings each one below the threshold
