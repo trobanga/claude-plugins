@@ -59,6 +59,15 @@ Ask: "What should the public interface look like? Which behaviors are most impor
 
 **You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
 
+#### Delegated mode
+
+When a caller launched you as a subagent with a brief (for example `implement` through a `tdd-implementer-*` agent), the planning above is already done and approved. You cannot reach the user.
+
+- Take the interface and the ordered list of behaviors from the brief. Do not ask for confirmation.
+- Keep to the brief. If you find a behavior the brief missed, test it only when the approved design clearly requires it, and list it as a deviation.
+- If the brief cannot be implemented as written, stop and report the problem. Do not redesign the interface yourself; that decision belongs to the caller.
+- Continue with the tracer bullet below.
+
 ### 2. Tracer Bullet
 
 Write ONE test that confirms ONE thing about the system:

@@ -1,6 +1,6 @@
 {
   "name": "trobanga",
-  "description": "Claude Code plugins for test-driven development, coverage and mutation gates, architecture review, and game development",
+  "description": "Claude Code plugins for test-driven development, coverage and mutation testing, architecture review, and game development",
   "owner": {
     "name": "Daniel Hahne",
     "email": "daniel@trobanga.de"
@@ -10,17 +10,6 @@
       "name": "trobanga-skills",
       "source": "./plugins/trobanga-skills",
       "description": "trobanga personal skills: workflow, docs, architecture, gamedev, and engineering skills",
-      "version": "0.1.0",
-      "author": {
-        "name": "Daniel Hahne",
-        "email": "daniel@trobanga.de"
-      },
-      "license": "Apache-2.0"
-    },
-    {
-      "name": "pr-mutants",
-      "source": "./plugins/pr-mutants",
-      "description": "Run cargo-mutants on the changed lines before `gh pr create` and block the PR while a mutant survives",
       "version": "0.1.0",
       "author": {
         "name": "Daniel Hahne",

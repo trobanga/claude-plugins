@@ -24,7 +24,7 @@ The plugin installs no hooks.
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `CONTEXT.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
-| `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, PR. GitHub, Linear or beads. |
+| `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, PR. GitHub, Linear or beads. |
 | `gh-issue` | Entry point that calls `implement` with tracker and forge preset to GitHub. |
 | `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
 | `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
@@ -67,11 +67,21 @@ The plugin installs no hooks.
 | --- | --- |
 | `refactoring-ui` | Audits and fixes visual hierarchy, spacing, color, and depth in web UIs. |
 
-## Subagent
+## Subagents
 
 `crap-agent` computes the CRAP score of every changed function and then brings
 each one below the threshold, by adding tests or by extracting functions. It
 supports Java, Go, Rust, TypeScript, and Elixir.
+
+`mutant-agent` checks whether the project does mutation testing. If it does, the
+agent runs the project's own mutation tool on the changed code and adds a test for
+each surviving mutant that a test can catch. If it does not, the agent stops at
+once.
+
+`tdd-implementer-low`, `tdd-implementer-medium` and `tdd-implementer-high` run the
+`tdd` loop on Sonnet for an approved plan. `implement` writes the brief, selects the
+variant by effort, and verifies the result. The three files differ only in `effort`,
+because the `Agent` tool cannot set effort for each call.
 
 ## Requirements
 

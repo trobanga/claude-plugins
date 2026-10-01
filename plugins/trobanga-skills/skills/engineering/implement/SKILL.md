@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Work on a tracked issue in a fresh git worktree based on the default branch. Claims the issue, creates the worktree, explores, designs, implements test-first, drives the CRAP score down, reviews, and opens a PR that closes the issue. Works with GitHub, Linear or beads. Use when the user asks to start, pick up, implement, or work on an issue ("work on #123", "implement GIAM-45", "take bd-12", "start on that issue").
+description: Work on a tracked issue in a fresh git worktree based on the default branch. Claims the issue, creates the worktree, explores, designs, implements test-first, drives the CRAP score down, kills surviving mutants, reviews, and opens a PR that closes the issue. Works with GitHub, Linear or beads. Use when the user asks to start, pick up, implement, or work on an issue ("work on #123", "implement GIAM-45", "take bd-12", "start on that issue").
 ---
 
 # Implement a Tracked Issue in a New Worktree
@@ -220,19 +220,60 @@ If T1 errors, handle it per **Error Handling** below.
     Skip plan mode only when the issue has a single obvious approach and no open questions —
     state the plan in a sentence or two and continue.
 
+    Either way, the plan names the public interface changes and the ordered list of behaviors
+    to test. This is the planning step of `Skill(trobanga-skills:tdd)`, done here with the user,
+    because the implementer in step 14 cannot ask the user anything.
+
 ---
 
 ## Phase 4 — Implement
 
-14. **Implement test-first via `Skill(trobanga-skills:tdd)`.** Invoke it before writing any
-    implementation code; it owns the red-green-refactor loop. Do not write the implementation
-    and then backfill tests, and do not write all the tests up front — one failing test,
-    minimal code to pass it, refactor, repeat.
+14. **Implement test-first on Sonnet.** Delegate the red-green-refactor loop to a
+    `trobanga-skills:tdd-implementer-<effort>` agent. It runs on Sonnet and invokes
+    `Skill(trobanga-skills:tdd)` in delegated mode. You keep the design, the verification and
+    the commit.
 
-    Follow the codebase's existing conventions over general best practice.
+    **Write the brief.** The agent starts with no context, so the brief is self-contained:
+    - The issue id and a two-line summary of the goal.
+    - The approved design from step 13, including the decisions the user made.
+    - The public interface changes, with signatures.
+    - The ordered list of behaviors to test.
+    - The files to change, and an existing test or module to copy the style from.
+    - The command that runs the tests.
+    - What is out of scope.
+
+    **Choose the effort.** Pick the lowest level you expect to succeed on the first run. A
+    failed run and a second run cost more than one run at the next level.
+
+    | Effort | Use it when |
+    |---|---|
+    | `low` | Mechanical change: one or two files, an existing pattern to copy, every behavior fully specified. |
+    | `medium` | Default. Several files, established patterns, no subtle logic. |
+    | `high` | Subtle logic: concurrency, parsing, numerics, security, state across modules, unclear existing code. Also a retry after a failed `medium` run. |
+
+    State the choice in one line, for example "Implementation: tdd-implementer-medium —
+    three files, existing handler pattern". If the design itself is still in doubt, do not
+    raise the effort; go back to step 13.
+
+    **Launch** the agent in the foreground, because step 15 needs its result:
+    ```
+    Agent(subagent_type: "trobanga-skills:tdd-implementer-<effort>", prompt: <brief>)
+    ```
+
+    **Verify the result yourself.** Do not trust the report. Read the diff and check it
+    against the brief and the codebase's existing conventions. Run the tests. Check that the
+    tests assert behavior through the public interface, per the `tdd` skill.
+
+    **If the agent is blocked or the result is wrong:**
+    - Blocked on a design question: resolve it (ask the user if needed), then continue the
+      same agent with `SendMessage`, so it keeps its context.
+    - Wrong or incomplete work: send the specific defects with `SendMessage`. If a second
+      round does not fix them, run a new agent one effort level higher.
+    - A `high` run fails: take over in this session and finish the loop with
+      `Skill(trobanga-skills:tdd)` yourself. Report that you did.
 
 15. **Simplify** with `/simplify`, which reviews the changed code for reuse, simplification,
-    efficiency and altitude and applies the fixes. It does not hunt for bugs — step 17 does.
+    efficiency and altitude and applies the fixes. It does not hunt for bugs — step 18 does.
 
     **This step is conditional.** `/simplify` launches four review agents, so skip it when the
     non-test diff against the default branch is small — roughly under 50 changed lines. Report
@@ -255,7 +296,20 @@ If T1 errors, handle it per **Error Handling** below.
     It runs before the review, not after, so the reviewers see the tests it wrote and the
     functions it extracted.
 
-17. **Review** the final diff. Launch `feature-dev:code-reviewer` agents in parallel, each
+17. **Kill surviving mutants** with the `trobanga-skills:mutant-agent` agent. It runs the
+    project's own mutation tool on the code the branch changes, and adds a test for each
+    mutant that survives and that a test can catch.
+
+    **This step is conditional.** The agent first checks whether the project does mutation
+    testing (its `CLAUDE.md`, task runner, CI or tool configuration). If it does not, the
+    agent reports one line — "Mutation step skipped: the project does not do mutation
+    testing" — and you continue. A mutant the agent leaves alive does not block shipping:
+    carry its reason into the PR body, so the reviewer can judge it.
+
+    It runs after the CRAP step, because the tests that step adds already kill some mutants,
+    and before the review, so the reviewers see the tests it wrote.
+
+18. **Review** the final diff. Launch `feature-dev:code-reviewer` agents in parallel, each
     with one focus:
     - Bugs and functional correctness
     - Project conventions and existing abstractions
@@ -274,7 +328,7 @@ If T1 errors, handle it per **Error Handling** below.
 > later fix — from a reviewer agent, from **F4**, or from any other part of the workflow —
 > amends that commit. Do not add a fix as an extra commit.
 
-18. **Commit, push and open the pull request** per **F2** and **F3**, passing `--signoff`
+19. **Commit, push and open the pull request** per **F2** and **F3**, passing `--signoff`
     (required for all commits in this environment). The PR body must carry the **T5** close
     reference.
 
@@ -284,13 +338,23 @@ If T1 errors, handle it per **Error Handling** below.
 
     **Capture the PR number** from the output — the next steps need it.
 
-19. **Assign the PR to yourself** per the forge adapter. If assignment fails (for example the
+    **Show the commit text.** After the PR opens, print the full message — subject, body and
+    trailers — of every commit the PR carries, verbatim, in a fenced block:
+
+    ```
+    git log --format='%H%n%B' origin/<default-branch>..HEAD
+    ```
+
+    Normally this is the one commit. If it lists more than one, the squash above was missed —
+    say so.
+
+20. **Assign the PR to yourself** per the forge adapter. If assignment fails (for example the
     PR was opened from a fork, where the author may not be assignable), report it and
     continue — it is not worth blocking the review on.
 
-20. **Review the pull request** with **F4** — **only for large or risky changes** (wide diffs,
+21. **Review the pull request** with **F4** — **only for large or risky changes** (wide diffs,
     migrations, auth or security-relevant code, data handling). The full review already ran in
-    step 17; for routine changes, skip this and finish. If it runs and finds high-severity
+    step 18; for routine changes, skip this and finish. If it runs and finds high-severity
     issues, fix them:
     - Amend the fix into the single commit with `git commit --amend --signoff`. Never add a
       follow-up commit.
