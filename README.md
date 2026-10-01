@@ -57,8 +57,17 @@ are close to the original, some are rewritten, all started there:
 `tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
 
 That work is MIT licensed. The notice is at
-[LICENSES/mattpocock-skills-MIT.txt](LICENSES/mattpocock-skills-MIT.txt), and it
-governs those skills. Everything else here is Apache-2.0.
+[plugins/LICENSES/mattpocock-skills-MIT.txt](plugins/LICENSES/mattpocock-skills-MIT.txt),
+and it governs those skills.
+
+Two skills are derived from
+[humanlayer/skills](https://github.com/humanlayer/skills) by Dex Horthy at
+HumanLayer: `show-me`, close to the original, and `pr`, which builds on it. That
+work is MIT licensed. The notice is at
+[plugins/LICENSES/humanlayer-skills-MIT.txt](plugins/LICENSES/humanlayer-skills-MIT.txt),
+and it governs those two skills.
+
+Everything else here is Apache-2.0.
 
 `improve-codebase-architecture` also draws on "Design It Twice" from John
 Ousterhout, *A Philosophy of Software Design*.
@@ -66,4 +75,4 @@ Ousterhout, *A Philosophy of Software Design*.
 ## License
 
 Apache-2.0, except the skills credited above. See [LICENSE](LICENSE) and
-[LICENSES/](LICENSES).
+[plugins/LICENSES/](plugins/LICENSES).
