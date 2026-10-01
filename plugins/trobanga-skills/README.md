@@ -22,7 +22,7 @@ The plugin installs no hooks.
 | `improve-coverage` | Raises patch coverage toward a target by writing real tests, file by file. |
 | `crap-score` | Computes the CRAP score (complexity against coverage) of every changed function. Measures only. |
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
-| `improve-codebase-architecture` | Finds deepening opportunities, guided by `CONTEXT.md` and the ADRs. |
+| `improve-codebase-architecture` | Finds deepening opportunities, guided by `GLOSSARY.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
 | `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, PR. GitHub, Linear or beads. |
 | `gh-issue` | Entry point that calls `implement` with tracker and forge preset to GitHub. |
