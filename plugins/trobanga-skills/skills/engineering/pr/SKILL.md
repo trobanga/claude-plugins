@@ -1,6 +1,6 @@
 ---
 name: pr
-description: "Write a pull request body with three sections: Summary (one or two sentences, then a diagram or diff sketch), a section that shows the change running, with a heading that names the kind of change (Reproduction, Demo, Screenshots or Unchanged Behavior) and, only when something can break, Risks. Use when writing or editing a PR body, or before running `gh pr create`."
+description: "Write a pull request body with three sections: Summary (one or two sentences, then a diagram or diff sketch), a section that shows the change running, with the kind of change as its heading (Bug Fix, New Behavior, Visual Change or Refactor) and, only when something can break, Risks. Use when writing or editing a PR body, or before running `gh pr create`."
 license: MIT
 metadata:
   credits:
@@ -19,7 +19,7 @@ Use this template for writing the PR body:
 
 <diagram, diff-sketch, or tree>
 
-## <Reproduction | Demo | Screenshots | Unchanged Behavior>
+## <Bug Fix | New Behavior | Visual Change | Refactor>
 
 <one real run that shows the outcome from the Summary: before and after for a fix, input and output for new behavior>
 
@@ -44,20 +44,22 @@ Then pick the smallest view that makes the key point clear: pseudocode, a call t
 
 Show what the reviewer cannot see in the diff: the change working when it runs. CI already shows that the tests pass. Do not repeat it.
 
-Pick the kind of change, and use its heading:
+Use the kind of change as the heading, and show its content:
 
-| Kind of change | Heading | Content |
-|---|---|---|
-| Bug fix | `## Reproduction` | the wrong output before and the correct output after, from the same command or test |
-| New behavior | `## Demo` | one representative input and the output it now gives |
-| Visual change | `## Screenshots` | a screenshot before and after |
-| Refactor | `## Unchanged Behavior` | the existing tests that cover the changed code, which the PR does not change |
+| Heading | Content |
+|---|---|
+| `## Bug Fix` | the wrong output before and the correct output after, from the same command or test |
+| `## New Behavior` | one representative input and the output it now gives |
+| `## Visual Change` | a screenshot before and after |
+| `## Refactor` | the existing tests that cover the changed code, which the PR does not change |
+
+The Summary already describes the change. Under this heading, show only the output, not a second description.
 
 If a PR has two kinds, use the heading of the kind that the Summary names.
 
-For a Demo, use the real entry point (CLI, HTTP request, REPL) when one exists. If the code has no entry point yet, for example an internal slice of a larger feature, pick the one test that best shows the key behavior. Show its input and its expected output. Show one test, not the list.
+For New Behavior, use the real entry point (CLI, HTTP request, REPL) when one exists. If the code has no entry point yet, for example an internal slice of a larger feature, pick the one test that best shows the key behavior. Show its input and its expected output. Show one test, not the list.
 
-`gh` cannot attach images to a PR body. If you have no way to upload an image, use the Demo form, and never write a placeholder for a missing screenshot.
+`gh` cannot attach images to a PR body. If you have no way to upload an image, show the input and output as text, and never write a placeholder for a missing screenshot.
 
 Paste real output, trimmed to the lines that matter, at most about ten lines. Do not paraphrase what a run showed. Do not add notes in a second column next to the output.
 
