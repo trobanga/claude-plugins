@@ -16,7 +16,7 @@ threshold: 8.
 ## Structure
 
 The skill has one entry point and one collector per language, in
-`~/.agents/skills/engineering/crap-score/scripts/`:
+`${CLAUDE_SKILL_DIR}/scripts/`:
 
 - `crap_score.py` detects the project type, runs the collector, scores.
 - `crap_core.py` maps the diff to functions and computes the score.
@@ -37,10 +37,17 @@ the coverage kind and appears in the footer of the table.
 ## Instructions
 
 1. Build fresh coverage with the command of the language section. Do not
-   reuse an old report, it may describe old code.
+   reuse an old report, it may describe old code. Run the build outside
+   the Bash sandbox: coverage tools write to the toolchain caches, and
+   Mockito cannot attach its agent inside it.
+
+   A failing test stops the procedure: report it and score nothing,
+   because the coverage of a red run describes code that does not work.
+   If the project's AGENTS.md or CLAUDE.md documents tests that fail
+   locally, exclude exactly those from the build instead.
 2. Score the branch:
 
-       python3 ~/.agents/skills/engineering/crap-score/scripts/crap_score.py \
+       python3 ${CLAUDE_SKILL_DIR}/scripts/crap_score.py \
          --range origin/main...HEAD --threshold 8
 
    `--report` gives the report path. Only Java needs it, because the
@@ -58,13 +65,16 @@ above the threshold.
 - Detected by `pom.xml`. Coverage: **branch**, line for methods without
   branches.
 - Needs the JaCoCo Maven plugin.
-- Build the report per changed module. The first path segment of
-  `git diff --name-only origin/main...HEAD -- '*.java'` names the module.
+- Build the report per changed module. The module of a file in
+  `git diff --name-only origin/main...HEAD -- '*.java'` is the nearest
+  directory above it that holds a `pom.xml`. For the root module, drop
+  `-pl`.
 
-      mvn verify -pl <m1>,<m2> --also-make -Dmaven.test.failure.ignore=true -q
+      mvn verify -pl <m1>,<m2> --also-make -q
       mvn jacoco:report -pl <m> -Djacoco.dataFile=target/jacoco.exec -q
 
-- Report: `<m>/target/site/jacoco/jacoco.xml`. Give it with `--report`.
+- Report: `<m>/target/site/jacoco/jacoco.xml`. Give it with `--report`,
+  and score each module in a run of its own.
 - Lambdas are excluded. `--include-lambdas` scores them as own methods.
 - JaCoCo gives only the first code line of a method. A method ends where
   the next method of the same source file starts, across inner classes.
@@ -80,9 +90,10 @@ above the threshold.
   the complexity and the line range of every function from the Go AST.
 - Build the report from the repository root:
 
-      go test -count=1 -coverprofile=coverage.out ./...
+      go test -count=1 -coverpkg=./... -coverprofile=coverage.out ./...
 
-  Add `-coverpkg=./...` when the tests live in a package of their own.
+  `-coverpkg=./...` counts the tests that live in a package of their
+  own; patch-coverage builds the same profile.
 - Report: `coverage.out`, the default of `--report`.
 - Coverage is the share of covered statements of the function. The cover
   tool cuts a block at every branch, so an uncovered branch always lowers
@@ -200,4 +211,4 @@ above the threshold.
 
 ## Tests
 
-    python3 -m unittest discover -s ~/.agents/skills/engineering/crap-score/scripts
+    python3 -m unittest discover -s ${CLAUDE_SKILL_DIR}/scripts

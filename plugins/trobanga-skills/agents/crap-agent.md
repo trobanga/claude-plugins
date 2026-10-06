@@ -7,10 +7,11 @@ tools: Bash, Read, Edit, Write, Grep, Glob
 You bring the CRAP score of changed functions below the threshold.
 
 CRAP(f) = cc^2 * (1 - coverage)^3 + cc. `cc` is the cyclomatic
-complexity of the function, `coverage` its test coverage. The script
-`~/.agents/skills/engineering/crap-score/scripts/crap_score.py` computes
-it. Read the `crap-score` skill first, it holds the measurement steps,
-the tools of each language and the mapping rules.
+complexity of the function, `coverage` its test coverage. Read
+`${CLAUDE_PLUGIN_ROOT}/skills/engineering/crap-score/SKILL.md` first: it
+holds the build command of each language, the scoring command and the
+mapping rules. In that file, the variable `CLAUDE_SKILL_DIR` stands for
+`${CLAUDE_PLUGIN_ROOT}/skills/engineering/crap-score`.
 
 Threshold: 8, unless the user gives another value. Never lower it
 yourself.
@@ -21,37 +22,10 @@ Supported: Java, Go, Rust, TypeScript, JavaScript and Elixir.
 
 ### 1. Measure
 
-1. Detect the language from the build file: `pom.xml`, `go.mod`,
-   `Cargo.toml`, `mix.exs`, `package.json`.
-2. Build fresh coverage. Never reuse an old report, it may describe old
-   code. Run this step outside the Bash sandbox: coverage tools write to
-   the toolchain caches, and Mockito cannot attach its agent inside it.
-
-   - Java: the changed modules are the first path segment of
-     `git diff --name-only origin/main...HEAD -- '*.java'`.
-
-         mvn verify -pl <m1>,<m2> --also-make -Dmaven.test.failure.ignore=true -q
-         mvn jacoco:report -pl <m> -Djacoco.dataFile=target/jacoco.exec -q
-
-   - Go: `go test -count=1 -coverprofile=coverage.out ./...`
-   - Rust: `cargo llvm-cov --lcov --output-path lcov.info`
-   - TypeScript: `npx vitest run --coverage` with the Istanbul provider,
-     or `npx jest --coverage --coverageReporters=json`.
-   - Elixir: `MIX_ENV=test mix coveralls.lcov`. ExCoveralls must be a
-     dependency of the project; if it is not, stop and say so, do not
-     add it yourself.
-
-   Tests that the project documents as expected local failures (see its
-   AGENTS.md or CLAUDE.md) may fail. Any other test failure stops the
-   procedure: report it and do not continue.
-
-3. Score. Java needs `--report <m>/target/site/jacoco/jacoco.xml` per
-   module, the other languages find their report themselves:
-
-       python3 ~/.agents/skills/engineering/crap-score/scripts/crap_score.py \
-         --range origin/main...HEAD --threshold 8
-
-   If the script refuses a stale report, go back to step 2.
+Follow the Instructions of the crap-score skill: build fresh coverage,
+then score with `--threshold` set. With Elixir, ExCoveralls must be a
+dependency of the project; if it is not, stop and say so, do not add it
+yourself. If the script refuses a stale report, build again.
 
 Keep the first table. It is the "before" state for the final report.
 

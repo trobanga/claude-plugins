@@ -137,6 +137,111 @@ else
     report no "--filter Outer matches the nested class Outer\$Inner" "$OUT"
 fi
 
+# --- Whole-script tests of patch-coverage-java.sh ----------------------------
+# Each test builds a git repo whose branch changes Java files, puts fake mvn
+# and diff-cover on PATH, and runs the real script. The fake mvn logs its
+# arguments to mvn.log, writes the exec file and a JaCoCo XML report for the
+# modules it is given, and fails when its arguments contain $FAKE_MVN_FAIL.
+make_fakes() {
+    local bin="$1"
+    mkdir -p "$bin"
+    cat >"$bin/mvn" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" >>mvn.log
+[[ -n "${FAKE_MVN_FAIL:-}" && "$*" == *"$FAKE_MVN_FAIL"* ]] && { echo "BUILD FAILURE" >&2; exit 1; }
+modules=.
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -pl) modules="${2//,/ }"; shift ;;
+        -Djacoco.dataFile=*) datafile="${1#*=}" ;;
+    esac
+    shift
+done
+for m in $modules; do
+    mkdir -p "$m/target/site/jacoco"
+    touch "$m/target/${FAKE_EXEC_NAME:-jacoco.exec}"
+    [[ -n "${datafile:-}" ]] && echo '<report name="x"/>' >"$m/target/site/jacoco/jacoco.xml"
+done
+exit 0
+EOF
+    printf '#!/usr/bin/env bash\necho "diff-cover $*"\n' >"$bin/diff-cover"
+    chmod +x "$bin/mvn" "$bin/diff-cover"
+}
+
+# make_repo DIR POM_DIR... CHANGED_FILE...: a repo with pom.xml in each
+# POM_DIR ("." for the root), and a branch that adds each CHANGED_FILE.
+make_repo() {
+    local dir="$1" poms="$2" changed="$3"
+    mkdir -p "$dir"
+    git -C "$dir" init -q -b main
+    for p in $poms; do mkdir -p "$dir/$p"; echo '<project/>' >"$dir/$p/pom.xml"; done
+    git -C "$dir" add -A
+    git -C "$dir" -c user.name=t -c user.email=t@t commit -qm base
+    git -C "$dir" update-ref refs/remotes/origin/main HEAD
+    for f in $changed; do mkdir -p "$dir/$(dirname "$f")"; echo 'class X {}' >"$dir/$f"; done
+    git -C "$dir" add -A
+    git -C "$dir" -c user.name=t -c user.email=t@t commit -qm change
+}
+
+run_java() {
+    local dir="$1"
+    shift
+    (cd "$dir" && env PATH="$WORK/bin:$PATH" "$@" bash "$JAVA_SH" 2>&1)
+}
+
+make_fakes "$WORK/bin"
+
+# --- Test 10: a root-module project is built at the root, not as module "src"
+R="$WORK/root-module"
+make_repo "$R" "." "src/main/java/com/example/Foo.java"
+OUT=$(run_java "$R")
+if [[ "$(cat "$R/mvn.log" 2>/dev/null)" != *"-pl src"* && "$OUT" == *"diff-cover ./target/site/jacoco/jacoco.xml"* ]]; then
+    report ok "root-module project: no '-pl src', report read from ./target"
+else
+    report no "root-module project: no '-pl src', report read from ./target" "$OUT
+mvn.log: $(cat "$R/mvn.log" 2>/dev/null)"
+fi
+
+# --- Test 11: an old exec file does not stand in for a test run --------------
+R="$WORK/stale-exec"
+make_repo "$R" ". core" "core/src/main/java/com/example/Foo.java"
+mkdir -p "$R/core/target" && touch "$R/core/target/jacoco.exec"
+OUT=$(run_java "$R")
+if [[ "$(cat "$R/mvn.log" 2>/dev/null)" == *"test -pl core --also-make"* ]]; then
+    report ok "runs the tests even when an exec file already exists"
+else
+    report no "runs the tests even when an exec file already exists" "$OUT
+mvn.log: $(cat "$R/mvn.log" 2>/dev/null)"
+fi
+
+# --- Test 12: a failing Maven run fails the script --------------------------
+for goal in test jacoco:report; do
+    R="$WORK/fail-$goal"
+    make_repo "$R" "." "src/main/java/com/example/Foo.java"
+    OUT=$(run_java "$R" FAKE_MVN_FAIL="$goal")
+    RC=$?
+    if [[ $RC -ne 0 && "$OUT" == *"BUILD FAILURE"* && "$OUT" != *"diff-cover "* ]]; then
+        report ok "a failing 'mvn $goal' fails the script and shows Maven's error"
+    else
+        report no "a failing 'mvn $goal' fails the script and shows Maven's error (rc $RC)" "$OUT"
+    fi
+done
+
+# --- Test 13: nested modules and a custom exec file name --------------------
+R="$WORK/nested"
+make_repo "$R" ". services/api lib" \
+    "services/api/src/main/java/a/A.java lib/src/main/java/b/B.java"
+OUT=$(run_java "$R" JACOCO_EXEC=jacoco-unit.exec FAKE_EXEC_NAME=jacoco-unit.exec)
+LOG="$(cat "$R/mvn.log" 2>/dev/null)"
+if [[ "$LOG" == *"test -pl lib,services/api --also-make"* &&
+    "$LOG" == *"-Djacoco.dataFile=target/jacoco-unit.exec"* &&
+    "$OUT" == *"services/api/target/site/jacoco/jacoco.xml"* ]]; then
+    report ok "finds nested modules and honours JACOCO_EXEC"
+else
+    report no "finds nested modules and honours JACOCO_EXEC" "$OUT
+mvn.log: $LOG"
+fi
+
 echo ""
 echo "passed: $PASS  failed: $FAIL"
 [[ $FAIL -eq 0 ]]

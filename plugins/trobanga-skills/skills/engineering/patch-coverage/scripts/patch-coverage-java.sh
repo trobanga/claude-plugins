@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# The JaCoCo data file that the test run writes, inside <module>/target/.
+# jacoco.exec is the default of jacoco-maven-plugin's prepare-agent goal; set
+# JACOCO_EXEC when the pom names it otherwise (e.g. jacoco-unit.exec).
+JACOCO_EXEC="${JACOCO_EXEC:-jacoco.exec}"
+
 # Detect changed Java files (source, not test) compared to origin/main
 CHANGED_FILES=$(git diff --name-only origin/main -- '*.java' | grep -v '/test/' || true)
 
@@ -9,8 +14,26 @@ if [[ -z "$CHANGED_FILES" ]]; then
     exit 0
 fi
 
-# Extract unique module paths from changed files
-CHANGED_MODULES=$(echo "$CHANGED_FILES" | cut -d'/' -f1 | sort -u | tr '\n' ',' | sed 's/,$//')
+# The module of a file is the nearest directory above it that holds a
+# pom.xml; "." is the root module. Paths are relative to the repository root,
+# so run the script from there.
+module_of() {
+    local dir
+    dir=$(dirname "$1")
+    while [[ "$dir" != "." && ! -f "$dir/pom.xml" ]]; do
+        dir=$(dirname "$dir")
+    done
+    echo "$dir"
+}
+
+CHANGED_MODULES=$(while read -r f; do module_of "$f"; done <<<"$CHANGED_FILES" |
+    sort -u | tr '\n' ',' | sed 's/,$//')
+
+# Maven selects modules by directory; the root module needs no -pl.
+pl_args() {
+    if [[ "$1" == "." ]]; then return; fi
+    echo "-pl $1"
+}
 
 if [[ -z "$CHANGED_MODULES" ]]; then
     echo "No Maven modules detected in changed files"
@@ -20,19 +43,10 @@ fi
 echo "Changed modules: $CHANGED_MODULES"
 echo ""
 
-# Check if jacoco unit test data exists, if not run tests
-NEED_TESTS=false
-for module in $(echo "$CHANGED_MODULES" | tr ',' '\n'); do
-    if [[ -d "$module" && ! -f "$module/target/jacoco-unit.exec" ]]; then
-        NEED_TESTS=true
-        break
-    fi
-done
-
-if $NEED_TESTS; then
-    echo "Running tests for changed modules..."
-    mvn test -pl "$CHANGED_MODULES" --also-make -q
-fi
+# Always run the tests: an exec file left by an earlier run describes old code.
+echo "Running tests for changed modules..."
+# shellcheck disable=SC2046
+mvn test $(pl_args "$CHANGED_MODULES") --also-make -q
 
 # Generate coverage reports for each changed module
 echo "Generating coverage reports..."
@@ -40,9 +54,14 @@ SRC_ROOTS=""
 COVERAGE_FILES=""
 
 for module in $(echo "$CHANGED_MODULES" | tr ',' '\n'); do
-    if [[ -d "$module" && -f "$module/target/jacoco-unit.exec" ]]; then
+    if [[ ! -f "$module/target/$JACOCO_EXEC" ]]; then
+        echo "WARNING: the test run wrote no $module/target/$JACOCO_EXEC. Bind" >&2
+        echo "jacoco-maven-plugin's prepare-agent goal in the pom, or set JACOCO_EXEC" >&2
+        echo "to the data file name the pom configures." >&2
+    else
         # Generate XML report
-        mvn jacoco:report -pl "$module" -Djacoco.dataFile=target/jacoco-unit.exec -q 2>/dev/null || true
+        # shellcheck disable=SC2046
+        mvn jacoco:report $(pl_args "$module") -Djacoco.dataFile="target/$JACOCO_EXEC" -q
 
         JACOCO_XML="$module/target/site/jacoco/jacoco.xml"
         SRC_DIR="$module/src/main/java"
