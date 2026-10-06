@@ -1,0 +1,5 @@
+interface:
+  display_name: "Evaluate Skill"
+  short_description: "Measure a skill against a no-skill baseline"
+policy:
+  allow_implicit_invocation: false
