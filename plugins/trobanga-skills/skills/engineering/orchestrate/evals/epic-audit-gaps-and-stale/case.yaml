@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: epic-audit-gaps-and-stale
+description: >
+  A pre-sliced epic whose children no longer match the locked spec: no
+  child covers R3 (revoke), and child 3 (rate-limit key creation) is work
+  the spec now rules out of scope. Targets the default failure of taking
+  the filed children as the plan and building them as they stand. The
+  skill's Setup criterion makes this an audit: report the missing revoke
+  slice and retire the stale rate-limit slice before building. Write and
+  Edit must stay unused. The skill sets disable-model-invocation, so run it
+  through evaluate-skill's prepare step; run with --scaffold --allow-tools
+  Bash Write Edit.
+tags: [setup, audit]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit, AskUserQuestion]
+  prompt: |
+    Use the orchestrate skill on the spec docs/specs/api-keys.md. It is an
+    epic: its child slices were filed last month, in
+    docs/specs/api-keys-slices.md. The tracker is none, so there is nowhere
+    to file or retire slices; just say what you would do. For this session
+    do only Setup: show me the slice list you would build from, then stop
+    before building anything.
+graders:
+  - name: gap-found
+    type: llm
+    criteria: >
+      PASS if the final message reports that no existing child covers R3
+      (revoking a key) and adds or proposes a slice for it. FAIL otherwise.
+  - name: stale-retired
+    type: llm
+    criteria: >
+      PASS if the final message says the rate-limit child is out of scope
+      per the spec and retires it or drops it from the slice list. FAIL if
+      the rate-limit slice stays in the list to be built.
+  - name: nothing-built
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+  - name: nothing-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orchestrate"'
+    arm: with-only

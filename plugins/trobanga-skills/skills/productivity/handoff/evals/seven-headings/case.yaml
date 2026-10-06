@@ -1,0 +1,48 @@
+schema_version: "1.1"
+name: seven-headings
+description: >
+  A short session with no open questions and no skills in play. The skill
+  fixes seven headings in order, `none` under an empty one, a file in $TMPDIR
+  outside the workspace, and the printed absolute path. Hypothesis: a default
+  agent writes a free-form summary, skips empty sections, and saves it in
+  the workspace or only prints it. The heading graders check the skill's own
+  format, which the next agent parses, so they show that the format is passed
+  on. handoff is user-invoked: run it on a copy made by evaluate-skill's
+  `skill_eval.py prepare`. Run with --allow-tools Write.
+tags: [format]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the handoff skill. The session so far:
+
+    USER: Rename the `--verbose` flag of our `pkgsync` CLI to `--debug`, and
+    keep `--verbose` working as a deprecated alias for one release.
+
+    ASSISTANT: Done in `cmd/pkgsync/flags.go`: `--debug` is the flag,
+    `--verbose` maps to it and prints a deprecation warning to stderr. The
+    tests in `cmd/pkgsync/flags_test.go` pass. The README still says
+    `--verbose`.
+
+    USER: Good. Next session updates the README and the man page, nothing
+    else.
+graders:
+  - name: outside-workspace
+    type: tool_used
+    tool: Write
+    input_match: '"file_path"\s*:\s*"[^"]*[Tt][Mm][Pp][^"]*/handoff-[a-z0-9-]+\.md"'
+  - name: headings-in-order
+    type: tool_used
+    tool: Write
+    input_match: '# Handoff: [\s\S]*## Goal[\s\S]*## State[\s\S]*## Decisions[\s\S]*## Open questions[\s\S]*## Next steps[\s\S]*## Artifacts[\s\S]*## Suggested skills'
+  - name: none-for-empty
+    type: tool_used
+    tool: Write
+    input_match: '## Open questions(?:\\n)+(?:- )?_?[Nn]one'
+  - name: printed-path
+    type: regex
+    pattern: '/[^\s`]*handoff-[a-z0-9-]+\.md'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

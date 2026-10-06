@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: one-question
+description: >
+  A plan with many open branches. The skill asks one question at a time, each
+  with the agent's recommended answer. Hypothesis: a default agent replies
+  with a numbered list of ten or more questions and no recommendations, or
+  with a critique instead of questions.
+tags: [interview]
+execution:
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the grilling skill. Grill me on this plan: in Q1 we split our Rails
+    monolith into four services (catalog, cart, payments, accounts), each
+    with its own Postgres database, deployed on Kubernetes. Two teams of
+    four engineers; we keep shipping features meanwhile.
+graders:
+  - name: one-question
+    type: llm
+    criteria: >
+      PASS if the final message puts exactly one question to the user (one
+      decision to answer; a question with a short clarifying clause counts
+      as one). FAIL if it asks two or more separate questions, for example
+      a numbered or bulleted list of questions.
+  - name: recommends-answer
+    type: llm
+    criteria: >
+      PASS if the message gives the agent's own recommended answer to the
+      question it asks, with a reason. FAIL if it only asks.
+  - name: no-verdict-yet
+    type: llm
+    criteria: >
+      PASS if the message does not present a final verdict, a rewritten
+      plan or a list of decisions for approval. FAIL if it does.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

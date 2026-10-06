@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: no-fog-no-map
+description: >
+  Charting a map for work whose destination is already named and whose way
+  is clear: rename the CLI's --verbose flag to --debug with a deprecation
+  alias, one session of work. Targets the default failure of producing a
+  plan, a map or tickets anyway. The skill (Chart, step 2) must notice
+  there is no fog, say no map is needed, and ask the user how to proceed,
+  creating nothing. The skill sets disable-model-invocation, so run it
+  through evaluate-skill's prepare step; run with --scaffold --allow-tools
+  Bash Write.
+tags: [chart, no-fog]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Use the wayfinder skill to chart this. We already pinned the
+    destination together: the `plat` CLI's `--verbose` flag becomes
+    `--debug`; `--verbose` stays as a hidden alias that prints a
+    deprecation warning for one release; the help text and README mention
+    only `--debug`. Nothing else is open about it.
+
+    This sandbox cannot reach GitHub: if you would create any issue, write
+    its title, labels and body to a file under `wayfinder-out/` instead.
+graders:
+  - name: says-no-map-needed
+    type: llm
+    criteria: >
+      PASS if the final message says the work is small or clear enough
+      that no wayfinder map is needed, and asks the user how they would
+      like to proceed (for example implement it directly or file one
+      issue). FAIL if it charts a map or a list of decision tickets.
+  - name: no-issues-written
+    type: file_exists
+    path: wayfinder-out/*
+    exists: false
+  - name: no-issue-commands
+    type: tool_used
+    tool: Bash
+    input_match: 'gh\s+(issue|api)'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?wayfinder"'
+    arm: with-only

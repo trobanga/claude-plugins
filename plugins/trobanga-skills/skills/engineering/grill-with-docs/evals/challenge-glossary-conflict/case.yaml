@@ -1,0 +1,56 @@
+schema_version: "1.1"
+name: challenge-glossary-conflict
+description: >
+  The user's answer uses two glossary terms against their definitions: it
+  "cancels the Loan" of a Member who never picked the tool up (no Loan
+  exists yet, and Cancellation is defined as the Member's own act before
+  the Hold). Targets the default failure of accepting the answer and
+  writing it into GLOSSARY.md, instead of calling out the conflict and
+  asking which meaning is right before recording anything. The skill sets
+  disable-model-invocation, so prepare it with evaluate-skill before
+  running. Run with --scaffold --allow-tools Write Edit.
+tags: [glossary, challenge]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the grill-with-docs skill. You may write files without asking. We
+    are mid-session.
+
+    You: What happens when a Member doesn't pick up a tool before the Hold
+    ends? Recommended: the tool goes to the next Reservation.
+    Me: Then we cancel the Loan and the tool goes to the next person in
+    line.
+
+    Continue.
+graders:
+  - name: calls-out-conflict
+    type: llm
+    criteria: >
+      PASS if the final message points out that the answer conflicts with
+      the glossary: no Loan exists when the tool was never picked up (it is
+      a Reservation or Hold that ends), and/or Cancellation is defined as
+      the Member withdrawing before the Hold starts; and it asks the user
+      which meaning is right or proposes a distinct term (for example an
+      expired Hold) for confirmation. FAIL if it accepts "cancel the Loan"
+      as stated and moves on.
+  - name: glossary-not-edited
+    type: tool_used
+    tool: Edit
+    input_match: 'GLOSSARY\.md'
+    min: 0
+    max: 0
+    arm: both
+  - name: glossary-not-rewritten
+    type: tool_used
+    tool: Write
+    input_match: 'GLOSSARY\.md'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

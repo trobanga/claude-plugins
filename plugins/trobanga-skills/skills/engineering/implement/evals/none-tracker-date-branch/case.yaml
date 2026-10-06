@@ -1,0 +1,58 @@
+schema_version: "1.1"
+name: none-tracker-date-branch
+description: >
+  Tracker `none`, forge `none`, work with no ticket id. Targets the default
+  failure of inventing a branch name (`feature/verbose-flag`, `add-verbose`)
+  and a worktree location of its own (a sibling directory or `.worktrees/`),
+  and of pretending to claim or file the work. The skill must take today's
+  date as the branch id (trackers/none.md T4), build the name with
+  branch_name.py (`YYYYMMDD--add-a-verbose-flag...`), and create the worktree
+  under `.claude/worktrees/` off `origin/main`. `origin` is a bare repo in
+  the workspace, so nothing reaches the network; the prompt stops the run
+  before any code or push. Run with --scaffold --allow-tools Bash.
+tags: [phase-0, phase-2, tracker-none]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, AskUserQuestion]
+  prompt: |
+    Use the implement skill. In this repo, add a `--verbose` flag to the
+    `greet` CLI that also prints where the name came from (argument,
+    environment or default). There is no ticket for this.
+
+    For this session do only the setup: stop as soon as the worktree for
+    this work exists. Write no code. Then report the resolved tracker, forge
+    and branch format, the branch name and the worktree path.
+graders:
+  - name: date-branch-id
+    type: regex
+    pattern: '\b20\d{6}--[a-z0-9-]*verbose'
+    target: last_message
+  - name: worktree-under-claude-worktrees
+    type: regex
+    pattern: '\.claude/worktrees/20\d{6}--'
+    target: last_message
+  - name: based-on-origin-default
+    type: tool_used
+    tool: Bash
+    input_match: 'worktree add .*origin/'
+  - name: no-github-calls
+    type: tool_used
+    tool: Bash
+    input_match: '(^|[^a-z])gh '
+    min: 0
+    max: 0
+    arm: both
+  - name: reports-none-nothing-to-claim
+    type: llm
+    criteria: >
+      PASS if the final message reports the tracker as none and the forge as
+      none (plain git), and says there is nothing to claim or that no issue
+      exists to claim. FAIL if it claims to have assigned, claimed or filed
+      an issue anywhere, or reports a GitHub, Linear or beads tracker.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?implement"'
+    arm: with-only

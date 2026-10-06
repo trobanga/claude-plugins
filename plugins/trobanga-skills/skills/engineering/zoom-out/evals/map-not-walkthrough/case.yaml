@@ -1,0 +1,39 @@
+schema_version: "1.1"
+name: map-not-walkthrough
+description: >
+  The user asks about one intricate private method. Targets the default
+  failure of a line-by-line walkthrough of _net_positions (the same layer)
+  instead of going up a layer: which modules feed it, who calls the code
+  around it, and where it sits in the month-end flow. The skill sets
+  disable-model-invocation, so prepare it with evaluate-skill before
+  running. Read-only; needs no grants.
+tags: [abstraction]
+context:
+  add_dirs: [toolshed]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the zoom-out skill. I'm stuck on `_net_positions` in
+    src/stl/stl_mgr.py (in the `toolshed` folder, one of your additional
+    working directories).
+graders:
+  - name: up-a-layer
+    type: llm
+    criteria: >
+      PASS if the answer places _net_positions in the larger flow: the
+      Ledger supplies what Branches owe each other, StlMgr turns it into
+      bank transfers at month end (started by the job registry), and
+      Reconciliation checks the transfers afterwards; and it does not spend
+      most of its length on a line-by-line reading of the method. FAIL if
+      it is mainly a walkthrough of the method body.
+  - name: names-trigger
+    type: regex
+    pattern: 'registry|month-end-settlement|jobs\.yaml'
+  - name: names-reconciliation
+    type: regex
+    pattern: '[Rr]econcil'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

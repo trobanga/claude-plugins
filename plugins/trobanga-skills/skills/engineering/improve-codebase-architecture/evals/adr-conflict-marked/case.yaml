@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: adr-conflict-marked
+description: >
+  pricing.py reaches into tax.py's private rate table and rounding helper,
+  which invites "merge pricing and tax into one deep module". ADR 0001
+  records why tax stays separate (Finance owns and audits it on its own
+  release calendar). Targets the default failure of proposing that merge
+  as an ordinary candidate, without reading or citing the ADR. A candidate
+  that keeps tax separate (for example pricing calling the public tax_for
+  instead of private internals) is the expected shape. Read-only; needs no
+  grants.
+tags: [adr]
+context:
+  add_dirs: [shop]
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Agent]
+  prompt: |
+    Use the improve-codebase-architecture skill. Our pricing and tax code
+    in the `shop` folder (one of your additional working directories) is a
+    pain to change. Find deepening opportunities there.
+graders:
+  - name: adr-respected
+    type: llm
+    criteria: >
+      PASS if no candidate proposes merging pricing.py and tax.py into one
+      module, or if every candidate that does is explicitly marked as
+      contradicting ADR 0001 and gives a reason why the friction is worth
+      reopening it. FAIL if a merge of pricing and tax is proposed without
+      mentioning the ADR.
+  - name: leak-named
+    type: llm
+    criteria: >
+      PASS if the final message identifies that pricing.py uses tax.py's
+      private internals (_RATES, _round_half_even) instead of its public
+      tax_for function. FAIL otherwise.
+  - name: asks-for-pick
+    type: regex
+    pattern: 'which[^\n]{0,80}(explore|pick|choose|dig)'
+    flags: i
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

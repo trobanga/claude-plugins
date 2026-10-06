@@ -1,0 +1,57 @@
+schema_version: "1.1"
+name: link-sibling
+description: >
+  The workspace repo already holds an idea attacking the same problem (slow
+  mobile product pages) and an unrelated one. The prompt gives a confirmed
+  problem statement and every detail, so no interview is needed. The skill
+  requires checking ideas/ for siblings and cross-linking them. Hypothesis: a
+  default agent writes the new file and never looks at, or links, the
+  existing one. idea is user-invoked: run it on a copy made by
+  evaluate-skill's `skill_eval.py prepare`. The repo is built by scaffold.sh:
+  run with --scaffold --allow-tools Write Edit.
+tags: [siblings]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the idea skill. Everything is settled, so write it up without
+    further questions.
+
+    Problem (I confirm this statement): Mobile shoppers wait more than four
+    seconds for a product page at the 95th percentile, and a third of them
+    leave before it renders.
+
+    Idea: serve product pages as pre-rendered HTML snapshots from the CDN
+    edge, rebuilt whenever a product's price or stock changes.
+
+    Who it hurts: mobile shoppers on mid-range Android phones, about 60 % of
+    traffic. The server spends 2.1 s of the 4.2 s building the page. Snapshots
+    would cut time to first byte to about 80 ms. Cost: about three weeks for
+    the snapshot builder, plus CDN storage of roughly 40 GB. Open question:
+    how stale may stock counts be before support complains?
+graders:
+  - name: new-file
+    type: file_exists
+    path: 'ideas/*.md'
+  - name: new-links-sibling
+    type: tool_used
+    tool: Write
+    input_match: '"content"\s*:[\s\S]*\]\((?:\./)?(?:ideas/)?faster-product-pages\.md\)'
+  - name: sibling-links-back
+    type: regex
+    pattern: 'Other ideas[\s\S]*\]\((?:\./)?(?:ideas/)?(?!faster-product-pages)[a-z0-9-]+\.md\)'
+    flags: i
+    target: {source: file, path: ideas/faster-product-pages.md}
+  - name: unrelated-untouched
+    type: tool_used
+    tool: Edit
+    input_match: 'dark-mode\.md'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

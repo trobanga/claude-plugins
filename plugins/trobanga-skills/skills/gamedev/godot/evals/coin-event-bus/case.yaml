@@ -1,0 +1,91 @@
+schema_version: "1.1"
+name: coin-event-bus
+description: >
+  Add coin pickups to a Godot 4.4 project and route the score through an
+  EventBus autoload whose script is empty. Hypothesis: a default agent
+  (1) writes `class_name EventBus` in the autoload script, a parse error
+  ("hides an autoload singleton") that breaks every script naming the bus;
+  (2) declares untyped signal parameters (`signal coin_collected(value)`);
+  (3) leaves the HUD polling the player in `_process` instead of
+  connecting to a bus signal; (4) looks the value up with
+  `var value := VALUES.get(kind)` or similar, a Variant-inference parse
+  error. The single-collect grader is an outcome check: a coin that awaits
+  its animation before freeing itself must stop counting further overlaps,
+  or one touch awards the value twice. No Godot binary runs; the graders
+  read the written files. Run with --allow-tools Write.
+tags: [signals, autoload, typing]
+context:
+  add_dirs: [game]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the godot skill. My Godot 4.4 project is in `game/`, one of your
+    additional working directories; it is read-only, and no Godot binary is
+    available. `scenes/pickups/coin.tscn` exists but its script
+    `scenes/pickups/coin.gd` does not. Write it: each coin is gold (worth
+    10) or silver (worth 5), chosen per instance in the inspector. When the
+    player touches a coin, the coin plays its "collect" animation and then
+    disappears, the score goes up by the coin's value, and the HUD shows the
+    new score. Route this through the `EventBus` autoload, which is
+    registered in project.godot but whose script is still empty, so the
+    coin, the player and the HUD do not reference each other. Write every
+    file you create or change at the same relative path in the current
+    working directory, for example `scenes/pickups/coin.gd`.
+graders:
+  - name: coin-written
+    type: file_exists
+    path: scenes/pickups/coin.gd
+  - name: bus-written
+    type: file_exists
+    path: autoloads/event_bus.gd
+  - name: hud-written
+    type: file_exists
+    path: scenes/ui/hud.gd
+  - name: bus-no-class-name
+    type: regex
+    pattern: '^\s*class_name\b'
+    flags: m
+    match: not_contains
+    target: {source: file, path: autoloads/event_bus.gd}
+  - name: bus-typed-signal-params
+    type: regex
+    pattern: '^\s*signal\s+\w+\s*\((?:[^)\n]*,)?\s*\w+\s*[,)]'
+    flags: m
+    match: not_contains
+    target: {source: file, path: autoloads/event_bus.gd}
+  - name: hud-no-polling
+    type: regex
+    pattern: '\bfunc\s+_process\b'
+    match: not_contains
+    target: {source: file, path: scenes/ui/hud.gd}
+  - name: hud-connects-bus
+    type: regex
+    pattern: '\bEventBus\.\w+\.connect\('
+    target: {source: file, path: scenes/ui/hud.gd}
+  - name: coin-no-direct-reference
+    type: regex
+    pattern: '\bhud\b|ScoreLabel|/root/|get_parent\(\)'
+    flags: i
+    match: not_contains
+    target: {source: file, path: scenes/pickups/coin.gd}
+  - name: coin-no-variant-inference
+    type: regex
+    pattern: '\bvar\s+\w+\s*:=\s*(?:JSON\.parse_string\(|(?:max|min|clamp)\(|[\w.\[\]"'']*\.(?:get|get_data|pop_back|pop_front|pick_random|front|back)\()'
+    match: not_contains
+    target: {source: file, path: scenes/pickups/coin.gd}
+  - name: single-collect
+    type: llm
+    focus: {source: file, path: scenes/pickups/coin.gd}
+    criteria: >
+      A coin awards its value at most once. Before or while its "collect"
+      animation plays, the script prevents a second overlap from counting:
+      a collected flag checked on entry, disconnecting body_entered,
+      disabling monitoring or the collision shape (set_deferred), or
+      emitting and freeing in the same call with no await in between.
+      FAIL if the handler awaits the animation and a second body_entered
+      during that wait would emit the score again.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

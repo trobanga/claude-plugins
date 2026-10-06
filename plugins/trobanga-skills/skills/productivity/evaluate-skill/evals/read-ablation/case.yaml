@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: read-ablation
+description: >
+  Read an ablation from two fixture result files (nothing is run). The
+  report script marks both group-by-label (-0.39) and since-last-tag (-0.06)
+  WORSE, but -0.06 is one grader flip at six graders and three runs; no-tag-
+  yet improves slightly. Hypothesis: a default agent, or one that trusts the
+  script's WORSE label, says the passage earns its place in two cases, and
+  calls a +0.06 a real improvement. evaluate-skill is user-invoked: run it on
+  a copy made by its own `skill_eval.py prepare`. Run with --allow-tools
+  'Bash(python3:*)'.
+tags: [ablation]
+context:
+  add_dirs: [results]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the evaluate-skill skill. I ablated lines 12-14 of my
+    `release-notes` skill (the rule that unlabelled pull requests go under
+    "Other") on sonnet, 3 runs each. The full run is
+    `results/full-sonnet.json` and the ablated run is
+    `results/ablated-sonnet.json` (`results` is one of your additional
+    working directories). Do not start any new runs. Does the passage earn
+    its place, and in which cases?
+graders:
+  - name: ran-compare
+    type: tool_used
+    tool: Bash
+    input_match: 'skill_eval\.py[^"]*\breport\b[^"]*full-sonnet\.json[^"]*ablated-sonnet\.json'
+    arm: with-only
+  - name: earns-place
+    type: llm
+    criteria: >
+      PASS if the answer says the passage earns its place in group-by-label,
+      where removing it drops the score from 0.89 to 0.50. FAIL otherwise.
+  - name: small-drop-is-noise
+    type: llm
+    criteria: >
+      PASS if the answer treats the -0.06 drop of since-last-tag as noise
+      (within one grader flip) or as needing more runs, rather than as
+      evidence that the passage matters there. FAIL if it counts
+      since-last-tag as a case where the passage earns its place.
+  - name: no-op-case
+    type: llm
+    criteria: >
+      PASS if the answer says that in no-tag-yet removing the passage costs
+      nothing (the score does not drop), so the passage adds nothing there
+      on sonnet. FAIL if it calls the +0.06 there a real improvement from
+      removing the passage without noting it is within noise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

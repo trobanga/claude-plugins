@@ -1,0 +1,57 @@
+schema_version: "1.1"
+name: local-file-for-foreign-repo
+description: >
+  A repo the user does not own: CLAUDE.md says the team tracks work in
+  GitHub Issues, while the user tracks their own work on it in beads and
+  wants no file the team would see. Targets the default failures of editing
+  CLAUDE.md, writing the shared .agents/issue-tracker.md, or ignoring the
+  file via the tracked .gitignore. The skill must write
+  .agents/issue-tracker.local.md, exclude it in .git/info/exclude, leave
+  CLAUDE.md alone and point out the contradiction with it. Run with
+  --scaffold --allow-tools Bash Write Edit.
+tags: [local, claude-md]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit, AskUserQuestion]
+  prompt: |
+    Use the setup-project skill. This repo belongs to another team. I track
+    my own work on it in beads, with id prefix `me`, and I push plain git
+    branches to my own remote; the team's PR flow is not mine. I don't want
+    any file the team would see. I'm not available for questions: pick what
+    you would recommend for anything else.
+graders:
+  - name: local-file-written
+    type: file_exists
+    path: .agents/issue-tracker.local.md
+  - name: shared-file-not-written
+    type: file_exists
+    path: .agents/issue-tracker.md
+    exists: false
+  - name: excluded-locally
+    type: regex
+    pattern: 'issue-tracker\.local\.md'
+    target: {source: file, path: .git/info/exclude}
+  - name: gitignore-untouched
+    type: file_exists
+    path: .gitignore
+    exists: false
+  - name: claude-md-unchanged
+    type: regex
+    pattern: 'beads'
+    flags: i
+    match: not_contains
+    target: {source: file, path: CLAUDE.md}
+  - name: reports-contradiction
+    type: llm
+    criteria: >
+      PASS if the final message points out that CLAUDE.md says the work is
+      tracked in GitHub Issues (with `{id}-{slug}` branches) while the new
+      local file says beads, and leaves the decision about CLAUDE.md to the
+      user. FAIL if it does not mention CLAUDE.md, or says it edited it.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?setup-project"'
+    arm: with-only

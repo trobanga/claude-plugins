@@ -1,0 +1,49 @@
+schema_version: "1.1"
+name: none-tracker-existing-worktree
+description: >
+  Tracker `none` with an id the user gives from a system the skills cannot
+  reach (OPS-881), and a worktree for exactly that branch left over from an
+  earlier session. Targets the default failure of creating a second worktree
+  or branch under a name of its own, which strands the WIP commit. The skill
+  must take the user's id as the branch id (trackers/none.md T4), arrive at
+  `ops-881--rotate-the-signing-keys` (branch_name.py output for this id and
+  title), find the existing worktree (Phase 2 step 6) and ask whether to
+  resume or start fresh, creating nothing. Run with --scaffold --allow-tools Bash.
+tags: [phase-2, tracker-none, resume]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, AskUserQuestion]
+  prompt: |
+    Use the implement skill for OPS-881 from our ops ticket system. Its title
+    is "Rotate the signing keys": `signing.py` must read the key from the
+    `SIGNING_KEY` environment variable instead of the hard-coded value.
+
+    Do only the setup in this session: stop once the worktree for this work
+    is ready, write no code, and report the branch name and worktree path.
+graders:
+  - name: branch-name-from-user-id
+    type: regex
+    pattern: 'ops-881--rotate-the-signing-keys'
+    target: last_message
+  - name: no-second-worktree
+    type: tool_used
+    tool: Bash
+    input_match: 'worktree add'
+    min: 0
+    max: 0
+    arm: both
+  - name: asks-resume-or-fresh
+    type: llm
+    criteria: >
+      PASS if the final message (or a question the agent asked) says that a
+      worktree for this branch already exists under
+      .claude/worktrees/ops-881--rotate-the-signing-keys, and asks the user
+      whether to resume in it or start fresh. FAIL if it reports a newly
+      created worktree or branch, or does not mention the existing one.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?implement"'
+    arm: with-only

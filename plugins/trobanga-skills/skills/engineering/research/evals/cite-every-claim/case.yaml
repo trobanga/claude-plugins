@@ -1,0 +1,57 @@
+schema_version: "1.1"
+name: cite-every-claim
+description: >
+  A question with claims owned by three different files. Targets the
+  default failures of doing the reading in the foreground instead of a
+  background agent, and of writing a findings file with uncited or
+  wrongly cited claims (each claim must name the file that owns it). The
+  background agent must finish before the run ends; if runs end with no
+  file, check whether the main agent stopped waiting for it. Run with
+  --allow-tools Write.
+tags: [citations, background]
+context:
+  add_dirs: [tinyweb]
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Agent, Write]
+  prompt: |
+    Use the research skill. Question: what are tinyweb's default request
+    timeout and maximum request body size, and can a single route override
+    either of them? The library's code is in the `tinyweb` folder, one of
+    your additional working directories; do not use the web. Use the slug
+    `tinyweb-limits`.
+graders:
+  - name: background-agent
+    type: tool_used
+    tool: Agent
+  - name: file-written
+    type: file_exists
+    path: docs/research/tinyweb-limits.md
+  - name: answer-correct
+    type: llm
+    focus: {source: file, path: docs/research/tinyweb-limits.md}
+    criteria: >
+      PASS if the file states all four facts: the default timeout is 15
+      seconds; a route can override it with `timeout_s` in `route()`; the
+      maximum body size is 1 MiB; and no route can override the body limit
+      because server.py checks it before the route is looked up. FAIL if
+      any of the four is missing or wrong.
+  - name: cites-config
+    type: regex
+    target: {source: file, path: docs/research/tinyweb-limits.md}
+    pattern: 'config\.py'
+  - name: cites-router
+    type: regex
+    target: {source: file, path: docs/research/tinyweb-limits.md}
+    pattern: 'router\.py'
+  - name: cites-server
+    type: regex
+    target: {source: file, path: docs/research/tinyweb-limits.md}
+    pattern: 'server\.py'
+  - name: path-reported
+    type: regex
+    pattern: 'docs/research/tinyweb-limits\.md'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

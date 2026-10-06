@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: ambiguous-question-user-away
+description: >
+  An ambiguous request ("how should waitlists work") in a backend-only repo,
+  with the user unreachable. Targets the default failures of stopping to
+  ask, of picking the UI branch, of not stating the branch choice as an
+  assumption at the top of the prototype, and of reusing the SQLite store
+  instead of keeping state in memory. Run with --scaffold --allow-tools
+  Write Edit "Bash(python3:*)".
+tags: [branch, ambiguity]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash, AskUserQuestion]
+  prompt: |
+    Use the prototype skill. I want to explore how waitlists for reserved
+    tools should work. I'm away for the afternoon and can't answer
+    questions; leave me something to try when I'm back.
+graders:
+  - name: does-not-ask
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+    arm: both
+  - name: logic-branch
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*prototype[^"]*\.py"'
+  - name: assumption-stated
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*prototype[^"]*\.py"(?=.*[Aa]ssum)'
+  - name: no-ui-files
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*\.(html|tsx|jsx)"'
+    min: 0
+    max: 0
+    arm: both
+  - name: in-memory
+    type: tool_used
+    tool: Write
+    input_match: 'sqlite3|toolshed\.db|reservations\.store|from reservations import store'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

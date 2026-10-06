@@ -1,0 +1,81 @@
+schema_version: "1.1"
+name: save-game-autoload
+description: >
+  Write the SaveManager autoload of a small Godot 4.4 project whose players
+  trade save files. Targets three defaults the skill exists to prevent.
+  Hypothesis: a default agent (1) adds `class_name SaveManager` to the
+  autoload script, which is a parse error ("hides an autoload singleton");
+  (2) follows the common tutorial advice of a custom Resource saved with
+  ResourceSaver and loaded from user://, which runs any script embedded in a
+  downloaded save; (3) writes `var data := JSON.parse_string(...)` or
+  `var x := data["gold"]` / `data.get(...)`, which is a parse error under
+  the default INFERENCE_ON_VARIANT setting. The position-roundtrip grader is
+  an outcome check: JSON.stringify turns a Vector2 into a string that does
+  not parse back. No Godot binary runs; the graders read the written file
+  and the final reply. Run with --allow-tools Write.
+tags: [save, typing, autoload]
+context:
+  add_dirs: [game]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the godot skill. My Godot project is in `game/`, one of your
+    additional working directories; it is read-only, and no Godot binary is
+    available. The `SaveManager` autoload is registered in project.godot but
+    its script is a stub. Write it: `save_game(slot: int)` and
+    `load_game(slot: int)` for slots 1 to 3, storing the player's health,
+    gold, inventory and position and the path of the current level scene,
+    and restoring them on load. Players trade save files on our Discord, so
+    a save may come from another machine. Write the script to
+    `autoloads/save_manager.gd` in the current working directory; if you
+    change another project file, write it at the same relative path there.
+    In your final reply, explain in at most three sentences why you chose
+    that file format.
+graders:
+  - name: file-written
+    type: file_exists
+    path: autoloads/save_manager.gd
+  - name: no-class-name-on-autoload
+    type: regex
+    pattern: '^\s*class_name\b'
+    flags: m
+    match: not_contains
+    target: {source: file, path: autoloads/save_manager.gd}
+  - name: json-format
+    type: regex
+    pattern: 'JSON\.(?:stringify|parse_string)\(|JSON\.new\(\)'
+    target: {source: file, path: autoloads/save_manager.gd}
+  - name: no-resource-save
+    type: regex
+    pattern: 'ResourceSaver\.save\(|ResourceLoader\.load\('
+    match: not_contains
+    target: {source: file, path: autoloads/save_manager.gd}
+  - name: no-variant-inference
+    type: regex
+    pattern: '\bvar\s+\w+\s*:=\s*(?:JSON\.parse_string\(|(?:max|min|clamp)\(|[\w.\[\]"'']*\.(?:get|get_data|pop_back|pop_front|pick_random|front|back)\(|[\w.]+\[\s*["''])'
+    match: not_contains
+    target: {source: file, path: autoloads/save_manager.gd}
+  - name: position-roundtrip
+    type: llm
+    focus: {source: file, path: autoloads/save_manager.gd}
+    criteria: >
+      The player's position survives a save and load: it is written as plain
+      numbers (for example [x, y] or {"x": x, "y": y}) or through
+      var_to_str/store_var, and rebuilt as a Vector2 on load. FAIL if a
+      Vector2 value is passed to JSON.stringify unchanged, or if the
+      position is not restored at all.
+  - name: explains-code-execution-risk
+    type: llm
+    focus: last_message
+    criteria: >
+      The final reply justifies the file format by saying that a Godot
+      resource file (.tres/.res, or anything loaded with load() or
+      ResourceLoader) can embed a script that runs when the file is loaded,
+      so a save from another player could execute code, and that JSON is
+      data only. A reply that only mentions readability, size or
+      convenience fails.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

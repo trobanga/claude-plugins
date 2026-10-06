@@ -1,0 +1,41 @@
+schema_version: "1.1"
+name: run-count-and-cap
+description: >
+  Asked to evaluate a skill that has three cases on two models. Each run is a
+  paid session, so before the first run the skill states the run count
+  (3 cases x 2 arms x 3 runs x 2 models = 36) and asks for a cost cap to pass
+  as --max-cost-usd. Hypothesis: a default agent starts (or tries to start)
+  `claude plugin eval` at once, or asks for confirmation without saying how
+  many runs it will pay for. Bash is not granted, so no eval can start; the
+  graders read the final message. evaluate-skill is user-invoked: run it on a
+  copy made by its own `skill_eval.py prepare`.
+tags: [cost]
+context:
+  add_dirs: [release-notes]
+execution:
+  max_turns: 12
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the evaluate-skill skill on the skill folder `release-notes` (one of
+    your additional working directories), on the models sonnet and haiku.
+graders:
+  - name: run-count
+    type: regex
+    pattern: '\b36\b'
+  - name: asks-cost-cap
+    type: llm
+    criteria: >
+      PASS if the final message asks the user for a cost cap or budget (in
+      dollars, or the value for --max-cost-usd) before any run starts.
+      FAIL if it reports runs as started or finished, or does not ask for a
+      cap.
+  - name: per-model-sessions
+    type: llm
+    criteria: >
+      PASS if the message makes clear that the count covers both a with-skill
+      and a no-skill (baseline) arm for each case, on each of the two models.
+      FAIL if it counts only one arm or one model.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

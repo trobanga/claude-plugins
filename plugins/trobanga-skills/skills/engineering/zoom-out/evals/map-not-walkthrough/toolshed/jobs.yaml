@@ -1,0 +1,4 @@
+- name: month-end-settlement
+  cron: "0 6 1 * *"
+- name: post-settlement-check
+  cron: "0 9 1 * *"

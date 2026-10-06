@@ -1,0 +1,81 @@
+schema_version: "1.1"
+name: death-event-and-kill-feed
+description: >
+  Add three features to a small Bevy 0.19 crate: a targeted death event
+  handled by an observer, a buffered kill feed read by a scheduled system,
+  and a camera-follow system that tolerates a missing player. The prompt
+  describes each mechanism without naming the API. Hypothesis: a default
+  agent writes pre-0.17 code — Trigger<E> with trigger.target() or
+  trigger_targets, #[derive(Event)] with EventWriter/EventReader and
+  add_event for the feed, and get_single() for the camera — none of which
+  compiles against bevy 0.19. Run with --allow-tools Write.
+tags: [api, observers, messages]
+context:
+  add_dirs: [dungeon]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    The Bevy crate `dungeon` is one of your additional working directories;
+    it is read-only. Add three features to its `src/main.rs`:
+
+    1. When an enemy's health drops to 0 or below, trigger an `EnemyDied`
+       event targeted at that enemy. Handle it in an observer that despawns
+       the enemy.
+    2. That observer also reports the kill as a `KillScored` value into a
+       buffered queue. A scheduled system `update_kill_label` drains the
+       queue once per frame and updates the "Kills: N" label.
+    3. A `camera_follow` system moves the 2D camera onto the player every
+       frame. There is exactly one player and one camera, but the player
+       will later be despawned on death; when it is missing, the system
+       must do nothing instead of panicking.
+
+    Write the complete new `src/main.rs` to `src/main.rs` in the current
+    working directory. Use the bevy skill.
+graders:
+  - name: file-written
+    type: file_exists
+    path: src/main.rs
+  - name: entity-event-derive
+    type: regex
+    pattern: '#\[derive\([^)]*\bEntityEvent\b[^)]*\)\](\s*#\[[^\]]*\])*\s*(pub\s+)?struct\s+EnemyDied\b'
+    target: {source: file, path: src/main.rs}
+  - name: observer-takes-on
+    type: regex
+    pattern: 'On<\s*EnemyDied\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: no-trigger-param
+    type: regex
+    pattern: '\bTrigger<|trigger_targets'
+    match: not_contains
+    target: {source: file, path: src/main.rs}
+  - name: message-derive
+    type: regex
+    pattern: '#\[derive\([^)]*\bMessage\b[^)]*\)\](\s*#\[[^\]]*\])*\s*(pub\s+)?struct\s+KillScored\b'
+    target: {source: file, path: src/main.rs}
+  - name: message-registered
+    type: regex
+    pattern: 'add_message::<\s*KillScored\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: message-reader
+    type: regex
+    pattern: 'MessageReader<\s*KillScored\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: no-event-reader-writer
+    type: regex
+    pattern: '\b(EventReader|EventWriter|add_event)\b'
+    match: not_contains
+    target: {source: file, path: src/main.rs}
+  - name: fallible-single
+    type: regex
+    pattern: '\.single(_mut)?\(\)'
+    target: {source: file, path: src/main.rs}
+  - name: no-get-single
+    type: regex
+    pattern: 'get_single'
+    match: not_contains
+    target: {source: file, path: src/main.rs}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: java-tests-only
+description: >
+  Hypothesis: without the skill an agent asked for the patch coverage of a
+  branch that changes only a test class and the README runs the Maven
+  build (which cannot succeed offline) or reports a coverage number for
+  the unchanged Greeter.java as if it were patch coverage. With the skill,
+  patch-coverage-java.sh sees no changed production Java file, prints "No
+  Java source files changed compared to origin/main" and exits before
+  Maven runs, so the run needs no toolchain. Run with --scaffold
+  --allow-tools Bash.
+tags: [java, early-exit]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the patch-coverage skill. What is the patch coverage of my branch
+    feature against origin/main?
+graders:
+  - name: nothing-to-measure
+    type: regex
+    pattern: 'no (java )?(production |source |main )?(java )?(source )?(files?|code|classes)[^.\n]*chang|only[^.\n]*\btests?\b'
+    flags: i
+    target: last_message
+  - name: no-maven-run
+    type: tool_used
+    tool: Bash
+    input_match: '\bmvn\b'
+    min: 0
+    max: 0
+  - name: no-invented-percentage
+    type: llm
+    criteria: >
+      PASS if the reply says there is no patch coverage to measure because
+      the branch changes no production Java source (only a test and the
+      README), and reports no coverage percentage as the branch's patch
+      coverage. FAIL if it presents a percentage (for example 0% or 100%,
+      or Greeter's overall coverage) as the patch coverage.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

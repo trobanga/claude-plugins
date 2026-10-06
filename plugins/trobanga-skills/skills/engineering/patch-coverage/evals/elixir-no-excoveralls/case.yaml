@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: elixir-no-excoveralls
+description: >
+  Hypothesis: without the skill an agent runs `mix test --cover` (Erlang
+  cover, whole-project line coverage) and reports that total as the
+  branch's coverage, or edits mix.exs to add a coverage dependency the
+  user did not ask for. With the skill, patch-coverage-elixir.sh stops at
+  once because ExCoveralls is missing from mix.exs and names the two
+  lines to add; the right reply passes that prerequisite on, gives no
+  number, and leaves mix.exs alone. No toolchain or network is needed for
+  that path. Run with --scaffold --allow-tools Bash.
+tags: [elixir, prerequisite]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the patch-coverage skill. How well are the changes on my branch
+    feature covered by tests, compared to origin/main?
+graders:
+  - name: names-excoveralls
+    type: regex
+    pattern: 'excoveralls'
+    flags: i
+    target: last_message
+  - name: no-whole-project-number
+    type: llm
+    criteria: >
+      PASS if the reply says patch coverage cannot be measured until
+      ExCoveralls is added to the project, and gives no coverage
+      percentage as the coverage of the branch's changes. FAIL if it
+      reports a percentage (for example from `mix test --cover`) as the
+      coverage of the branch or of its changes.
+  - name: mix-exs-untouched
+    type: regex
+    pattern: 'excoveralls|ExCoveralls'
+    match: not_contains
+    target: {source: file, path: mix.exs}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

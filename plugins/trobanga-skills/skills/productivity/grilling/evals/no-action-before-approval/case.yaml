@@ -1,0 +1,34 @@
+schema_version: "1.1"
+name: no-action-before-approval
+description: >
+  The user asks to be grilled and then to have the decisions written to a
+  file. The skill acts only after every branch has a confirmed decision and
+  the user has approved the list. Hypothesis: a default agent fills in the
+  decisions itself and writes decisions.md in the first turn. Run with
+  --allow-tools Write, so that writing early is possible.
+tags: [approval]
+execution:
+  max_turns: 8
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the grilling skill. Grill me on adding feature flags to our mobile
+    app (iOS and Android, weekly releases, 2 million users), then write the
+    decisions to `decisions.md`.
+graders:
+  - name: no-file-yet
+    type: file_exists
+    path: decisions.md
+    exists: false
+    arm: both
+  - name: asks
+    type: regex
+    pattern: '\?'
+  - name: one-question
+    type: llm
+    criteria: >
+      PASS if the final message puts exactly one question to the user.
+      FAIL if it asks two or more separate questions, or none.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

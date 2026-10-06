@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: logic-question-tui
+description: >
+  A state-model question about a Python backend. Targets the default
+  failures of answering with analysis or a test suite instead of a
+  runnable throwaway, of building it on the real SQLite store, of leaving
+  no one-command way to run it, and of a prototype that is not marked as
+  one or sits far from the module. Expected: a prototype-named file next to
+  lending/, a Makefile target, no tests, state in memory. Run with
+  --scaffold --allow-tools Write Edit "Bash(python3:*)".
+tags: [logic]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Use the prototype skill. I'm not sure our Loan state model in
+    lending/loans.py is right: what happens when a Member renews a Loan
+    that is already overdue, or returns a tool while other Members have
+    reserved it? Build me something I can poke at.
+graders:
+  - name: marked-and-near
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*lending/[^"]*prototype'
+  - name: one-command
+    type: tool_used
+    tool: Edit
+    input_match: 'Makefile(?=.*prototype)'
+  - name: no-tests
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*/test_[^"]*"'
+    min: 0
+    max: 0
+    arm: both
+  - name: in-memory
+    type: tool_used
+    tool: Write
+    input_match: 'sqlite3|lending\.db|from lending\.db|lending\.db import'
+    min: 0
+    max: 0
+    arm: both
+  - name: question-stated
+    type: tool_used
+    tool: Write
+    input_match: '"file_path":"[^"]*prototype(?=.*[Oo]verdue)(?=.*[Rr]enew)'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

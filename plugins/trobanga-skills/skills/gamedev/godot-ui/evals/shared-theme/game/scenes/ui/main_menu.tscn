@@ -1,0 +1,80 @@
+[gd_scene load_steps=7 format=3 uid="uid://d1mainmenufix"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n1"]
+bg_color = Color(0.2, 0.22, 0.28, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 12.0
+content_margin_right = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h1"]
+bg_color = Color(0.3, 0.33, 0.4, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n2"]
+bg_color = Color(0.21, 0.22, 0.27, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_right = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h2"]
+bg_color = Color(0.32, 0.32, 0.41, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n3"]
+bg_color = Color(0.19, 0.21, 0.29, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+content_margin_left = 12.0
+content_margin_right = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h3"]
+bg_color = Color(0.29, 0.34, 0.4, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="MainMenu" type="CanvasLayer"]
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Buttons" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+
+[node name="NewGameButton" type="Button" parent="Center/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 27
+theme_override_styles/normal = SubResource("StyleBoxFlat_n1")
+theme_override_styles/hover = SubResource("StyleBoxFlat_h1")
+text = "New Game"
+
+[node name="ContinueButton" type="Button" parent="Center/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_n2")
+theme_override_styles/hover = SubResource("StyleBoxFlat_h2")
+text = "Continue"
+
+[node name="QuitButton" type="Button" parent="Center/Buttons"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 29
+theme_override_styles/normal = SubResource("StyleBoxFlat_n3")
+theme_override_styles/hover = SubResource("StyleBoxFlat_h3")
+text = "Quit"

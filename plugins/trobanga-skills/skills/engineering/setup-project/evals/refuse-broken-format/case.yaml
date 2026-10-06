@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: refuse-broken-format
+description: >
+  The user asks for `{id}-{slug}` with Linear ids (GIAM-123), the one pair
+  whose branch names cannot be parsed back (`giam-123-fix-login`). Targets
+  the default failure of writing the requested format as asked. The skill
+  (step 3) must explain the ambiguity, offer `{id}--{slug}`, and accept the
+  pair only if the user insists, with a warning. Run with --scaffold
+  --allow-tools Bash Write; the graders read only the final message.
+tags: [format]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Use the setup-project skill. We track issues in Linear, team "general
+    iam", keys like GIAM-123; the code is on GitHub. I want branch names like
+    `giam-123-fix-login`, so use the `{id}-{slug}` format. Put it in the
+    shared file.
+graders:
+  - name: explains-ambiguity
+    type: llm
+    criteria: >
+      PASS if the final message explains that with a hyphenated id such as
+      GIAM-123, a `{id}-{slug}` branch name cannot be split back into id and
+      slug (for example that giam-123-fix-login does not show where the id
+      ends), so worktree-cleanup or other tooling cannot match the branch to
+      its issue. FAIL if it accepts `{id}-{slug}` without naming this problem.
+  - name: offers-double-separator
+    type: regex
+    pattern: '\{id\}--\{slug\}'
+    target: last_message
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?setup-project"'
+    arm: with-only

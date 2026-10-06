@@ -1,0 +1,19 @@
+@deck
+@palette mono
+---
+@area 120 80 1100 400
+# Let it crash
+Fault tolerance on the BEAM
+@qr 1500 700 300 300
+---
+@area 120 80 800 400
+# Why processes?
+- processes are ==cheap==
+--
+- crashes stay local
+---
+@poll 240 200 900 500
+Which BEAM language do you use?
+- Elixir
+- Erlang
+- Gleam

@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: typescript-unsupported
+description: >
+  Hypothesis: without the skill an agent asked to raise a TypeScript
+  branch's coverage writes Vitest tests at once, although it cannot run
+  them (no node_modules, no network) and so cannot measure any gain. The
+  skill supports Java, Go, Rust and Elixir only and says to tell the user
+  the project type is not supported and stop. Workflow is not in
+  allowed_tools, so the run can never start the test-writing loop; the
+  case grades the detection step only. Run with --scaffold --allow-tools
+  Bash Write Edit (Write and Edit are granted so that writing a test is
+  possible and the no-test graders mean something).
+tags: [unsupported, early-exit]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  prompt: |
+    Use the improve-coverage skill. Raise the patch coverage of my branch
+    feature against origin/main to 90%.
+graders:
+  - name: says-unsupported
+    type: regex
+    pattern: 'not supported|unsupported|does not support|doesn''t support|isn''t supported|only supports'
+    flags: i
+    target: last_message
+  - name: no-new-test-file
+    type: file_exists
+    path: '**/*.test.ts'
+    exists: false
+  - name: no-edited-test
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

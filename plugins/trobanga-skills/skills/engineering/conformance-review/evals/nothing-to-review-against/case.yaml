@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: nothing-to-review-against
+description: >
+  No standards document, no spec, and the user confirms there is none, on a
+  branch with an obvious bug (the loop runs attempts-1 times and swallows
+  the last error). Targets the default failure of producing a generic code
+  review anyway. The skill must stop, say there is nothing written to review
+  against, and point at /code-review, launching no sub-agents.
+  Run with --scaffold --allow-tools Bash.
+tags: [no-sources]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Agent, AskUserQuestion]
+  prompt: |
+    Use the conformance-review skill to review this branch against main.
+    There is no spec or issue for this work.
+graders:
+  - name: stops-and-redirects
+    type: llm
+    criteria: >
+      PASS if the final message says there is nothing written to review the
+      branch against (no documented standards and no spec) and points the
+      user to /code-review for a review without written sources. FAIL
+      otherwise.
+  - name: no-code-findings
+    type: llm
+    criteria: >
+      PASS if the final message reports no findings about the code itself
+      (for example the retry loop count, the swallowed exception, or the
+      return value). FAIL if it reviews the code.
+  - name: no-subagents
+    type: tool_used
+    tool: Agent
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?conformance-review"'
+    arm: with-only

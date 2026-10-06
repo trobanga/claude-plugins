@@ -1,0 +1,58 @@
+schema_version: "1.1"
+name: two-axes-cited
+description: >
+  A branch that breaks two documented standards, misses and gets wrong spec
+  requirements, adds an unrequested JSON export, and duplicates a formatting
+  block (a generic smell with no written source). Targets the default
+  failure of one merged, reranked review that mixes standards, spec gaps,
+  and generic code-quality opinions. The skill must report Standards and
+  Spec separately, cite CODING_STANDARDS.md and quote the spec, and drop the
+  uncited duplication finding. Run with --scaffold --allow-tools Bash.
+tags: [two-axes, citations]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Agent, AskUserQuestion]
+  prompt: |
+    Use the conformance-review skill to review this branch against main.
+graders:
+  - name: separate-sections
+    type: regex
+    pattern: '#+ *Standards[\s\S]*#+ *Spec'
+    target: last_message
+  - name: standards-cited
+    type: llm
+    criteria: >
+      PASS if the Standards part of the final message flags the direct
+      datetime.now() call or the bare `raise Exception`, and cites
+      CODING_STANDARDS.md (the file and the rule) for it. FAIL if neither
+      is flagged, or the finding cites no source.
+  - name: spec-missing-header
+    type: llm
+    criteria: >
+      PASS if the Spec part of the final message reports that the export
+      writes no header row, or uses a comma instead of the semicolon the
+      spec requires, and quotes or cites the spec line. FAIL otherwise.
+  - name: spec-scope-creep
+    type: llm
+    criteria: >
+      PASS if the final message reports the JSON export as behaviour the
+      spec did not ask for (scope creep, or out of scope per the spec).
+      FAIL otherwise.
+  - name: no-uncited-smells
+    type: llm
+    criteria: >
+      PASS if the final message contains no finding about duplicated code,
+      the repeated total/customer formatting, naming, or other general code
+      quality that has no standards-file or spec citation. FAIL if any such
+      uncited finding appears.
+  - name: parallel-subagents
+    type: tool_used
+    tool: Agent
+    min: 2
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?conformance-review"'
+    arm: with-only

@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: look-up-facts
+description: >
+  A plan inside a project folder whose files answer the factual questions the
+  plan raises (current session store, Postgres version, replica count, session
+  TTL). The skill says to look facts up and put only decisions to the user.
+  Hypothesis: a default agent reads only plan.md and asks the user facts that
+  the folder already answers, such as where sessions live today.
+tags: [facts]
+context:
+  add_dirs: [shop-api]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the grilling skill. Grill me on the plan in `shop-api/plan.md`; the
+    `shop-api` folder is one of your additional working directories.
+graders:
+  - name: explored
+    type: tool_used
+    tool: Read
+    input_match: 'docker-compose\.yml|session\.js'
+    arm: both
+  - name: asks-a-decision
+    type: llm
+    criteria: >
+      PASS if the question the final message puts to the user is a
+      decision (for example what happens to logged-in users at cut-over,
+      whether sessions may be lost on a Redis restart, which persistence
+      mode to run) and not a fact stated in the project files: that
+      sessions live today in the Postgres table `sessions` via
+      connect-pg-simple, that Postgres is version 12, that the API runs 3
+      replicas, or that sessions last 30 days. FAIL if it asks any of these
+      facts.
+  - name: uses-facts
+    type: llm
+    criteria: >
+      PASS if the message states or uses at least one fact taken from the
+      project files other than plan.md (Postgres 12, 3 replicas,
+      connect-pg-simple, the 30-day session lifetime). FAIL otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

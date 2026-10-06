@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: pause-menu
+description: >
+  Build a pause menu from scratch for a Godot 4 game played with a gamepad.
+  The skill puts the menu on a CanvasLayer, lays it out with containers, and
+  insists on keyboard and gamepad focus (grab_focus on the first button).
+  Hypothesis: a default agent builds a mouse-only menu under a plain Control
+  root. The works-while-paused grader is an outcome check the skill does not
+  teach: a menu that pauses the tree must itself run with process_mode
+  ALWAYS or WHEN_PAUSED, or it stops answering input; it shows whether the
+  skill's pattern leads the agent past that bug. No Godot binary runs; the
+  graders read the written files. Run with --allow-tools Write.
+tags: [menu]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the godot-ui skill. My Godot 4.3 game is played with a gamepad.
+    Build a pause menu with Resume, Settings and Quit buttons that opens and
+    closes on the "pause" input action (Start / Escape) and pauses the game
+    while it is open. Write the scene to `scenes/ui/pause_menu.tscn` and its
+    script to `scenes/ui/pause_menu.gd` in the current directory, as text
+    files Godot can open.
+graders:
+  - name: scene-written
+    type: file_exists
+    path: scenes/ui/pause_menu.tscn
+  - name: script-written
+    type: file_exists
+    path: scenes/ui/pause_menu.gd
+  - name: canvas-layer
+    type: regex
+    pattern: 'type="CanvasLayer"'
+    target: {source: file, path: scenes/ui/pause_menu.tscn}
+  - name: containers
+    type: regex
+    pattern: 'type="(?:VBoxContainer|CenterContainer)"'
+    target: {source: file, path: scenes/ui/pause_menu.tscn}
+  - name: gamepad-focus
+    type: regex
+    pattern: '\.grab_focus\(\)'
+    target: {source: file, path: scenes/ui/pause_menu.gd}
+  - name: works-while-paused
+    type: tool_used
+    tool: Write
+    input_match: 'process_mode\s*=\s*(?:2|3|(?:Node\.)?PROCESS_MODE_(?:ALWAYS|WHEN_PAUSED))'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,51 @@
+schema_version: "1.1"
+name: primary-over-secondary
+description: >
+  The fixture holds a library's source code (primary) and a community blog
+  post (secondary) that contradicts it on all three facts asked. Targets the
+  default failure of answering from the first or most readable write-up
+  instead of following each claim back to the code that owns it, and of
+  answering in chat without a findings file. The sources are local, so the
+  run needs no network. Run with --allow-tools Write.
+tags: [primary-sources]
+context:
+  add_dirs: [sources]
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Agent, Write]
+  prompt: |
+    Use the research skill. Question: what are the default number of
+    attempts, the maximum backoff delay, and the exceptions retried by
+    `httpretry.retry`? Everything you may consult is in the `sources`
+    folder, one of your additional working directories; do not use the web.
+    Use the slug `httpretry-defaults`.
+graders:
+  - name: file-written
+    type: file_exists
+    path: docs/research/httpretry-defaults.md
+  - name: attempts-from-source
+    type: regex
+    target: {source: file, path: docs/research/httpretry-defaults.md}
+    pattern: '(\b5\b[^\n]{0,40}attempt|attempt[^\n]{0,60}\b5\b|DEFAULT_ATTEMPTS\s*=\s*5)'
+    flags: i
+  - name: facts-from-source
+    type: llm
+    focus: {source: file, path: docs/research/httpretry-defaults.md}
+    criteria: >
+      PASS if the file states a maximum backoff of 30 seconds (plus up to
+      10% jitter is fine) and that only ConnectionError and TimeoutError are
+      retried by default, and attributes these facts to retry.py. If the
+      file mentions the blog post's figures (3 attempts, 60 seconds, any
+      exception), it must mark them as contradicted by the source. FAIL if
+      it reports any of the blog's figures as the answer.
+  - name: cites-source-file
+    type: regex
+    target: {source: file, path: docs/research/httpretry-defaults.md}
+    pattern: 'retry\.py'
+  - name: path-reported
+    type: regex
+    pattern: 'docs/research/httpretry-defaults\.md'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

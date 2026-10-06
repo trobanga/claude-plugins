@@ -1,0 +1,60 @@
+schema_version: "1.1"
+name: stale-hud-labels
+description: >
+  Fix one-frame HUD lag caused by six dependent systems sitting in one
+  add_systems tuple with no ordering, listed in their natural order.
+  Hypothesis: a default agent reads the written order as the run order and
+  blames the Changed<Health> / is_changed() filters or Commands deferral,
+  then patches around it (drops the filters, moves the labels to PostUpdate,
+  adds apply_deferred) instead of ordering the tuple with .chain() or
+  explicit edges. Run with --allow-tools Write.
+tags: [ordering]
+context:
+  add_dirs: [arena]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    The Bevy crate `arena` is one of your additional working directories; it
+    is read-only. Testers report three bugs: after a projectile hits, the
+    "Enemy HP" label sometimes shows the old total for one frame before it
+    updates; the "Kills" label sometimes lags the same way after a kill; and
+    a killed enemy sometimes stays on screen one frame longer than it should.
+    It differs between runs. Find the cause and fix it. Write the complete
+    fixed `src/main.rs` to `src/main.rs` in the current working directory,
+    and explain the cause in your final message. Use the bevy skill.
+graders:
+  - name: file-written
+    type: file_exists
+    path: src/main.rs
+  - name: orders-systems
+    type: regex
+    pattern: '\.chain\(\)|\.after\(|\.before\('
+    target: {source: file, path: src/main.rs}
+  - name: all-dependencies-ordered
+    type: llm
+    focus: {source: file, path: src/main.rs}
+    criteria: >
+      The schedule orders every dependency explicitly within Update, by
+      .chain(), .after()/.before(), or ordered system sets: apply_hits runs
+      after move_projectiles, despawn_dead runs after apply_hits,
+      update_hp_label runs after apply_hits, and update_kill_label runs after
+      despawn_dead. Moving only the label systems to a later schedule while
+      despawn_dead stays unordered relative to apply_hits fails.
+  - name: keeps-change-detection
+    type: regex
+    pattern: 'Changed<Health>[\s\S]*is_changed\(\)|is_changed\(\)[\s\S]*Changed<Health>'
+    target: {source: file, path: src/main.rs}
+  - name: names-the-cause
+    type: llm
+    criteria: >
+      The final message says the cause is that systems in one add_systems
+      tuple have no defined execution order, so the order they are written
+      in does not decide the order they run in, and a label or despawn
+      system can run before the system whose change it depends on. An
+      explanation that blames only change detection, Commands deferral, or
+      frame timing fails.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

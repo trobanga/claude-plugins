@@ -1,0 +1,71 @@
+schema_version: "1.1"
+name: bg-artifacts-by-path
+description: >
+  `bg` handoff whose session quotes a whole ADR. The skill lists artifacts by
+  path instead of copying them, tailors the document to the focus argument,
+  and launches `claude --bg` only after writing. Bash is not granted, so no
+  agent can launch; the graders read the Write call and check that the final
+  message does not claim a launch that cannot have happened. Hypothesis: a
+  default agent pastes the ADR text into the document and ignores the focus.
+  handoff is user-invoked: run it on a copy made by evaluate-skill's
+  `skill_eval.py prepare`. Run with --allow-tools Write (never Bash).
+tags: [bg, artifacts]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the handoff skill with the arguments: bg write the integration tests
+    for the retry queue
+
+    The session so far:
+
+    USER: Implement the retry queue from docs/plans/retry-queue.md. Here is
+    the ADR we agreed on, docs/adr/0007-retry-backoff.md:
+
+    > # 7. Retry backoff for outbound payment calls
+    > ## Context
+    > We saw three incidents in August in which the payment provider
+    > throttled us after a burst of immediate retries, and each incident
+    > lengthened the outage by twenty minutes or more.
+    > ## Decision
+    > Retry with exponential backoff, base 2 s, full jitter, at most 6
+    > attempts, delay capped at 300 s. After the last attempt the job goes
+    > to the `payments-dead` queue.
+    > ## Consequences
+    > A failed payment can take up to ten minutes to reach the dead queue.
+
+    ASSISTANT: Implemented in `internal/retry/queue.go` and committed as
+    a41c9e0 on branch `retry-queue`. Unit tests cover the delay function.
+    There are no integration tests yet; the docker-compose file at
+    `deploy/compose.test.yml` already starts a fake provider.
+graders:
+  - name: written
+    type: tool_used
+    tool: Write
+    input_match: 'handoff-[a-z0-9-]+\.md'
+  - name: adr-by-path
+    type: tool_used
+    tool: Write
+    input_match: 'docs/adr/0007-retry-backoff\.md'
+  - name: adr-not-copied
+    type: tool_used
+    tool: Write
+    input_match: 'three incidents in August|lengthened the outage'
+    min: 0
+    max: 0
+    arm: both
+  - name: focus-first
+    type: tool_used
+    tool: Write
+    input_match: '## Next steps(?:\\n)+1\. (?:(?!\\n).)*[Ii]ntegration'
+  - name: no-false-launch
+    type: llm
+    criteria: >
+      PASS if the final message does not claim that a background agent was
+      launched or is running. Saying it could not launch one, or giving the
+      `claude --bg` command for the user to run with the handoff file's
+      path as the prompt, passes. FAIL if it says an agent was started.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

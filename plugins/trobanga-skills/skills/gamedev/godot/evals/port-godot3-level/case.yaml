@@ -1,0 +1,88 @@
+schema_version: "1.1"
+name: port-godot3-level
+description: >
+  Port a Godot 3 level (script and scene, with a TileMap, yield-based
+  spawning and Camera2D.current) to a project already converted to 4.4.
+  Hypothesis: a default agent ports to the Godot 4.0 API it learned first:
+  a `TileMap` node with layer-0 calls (`get_cell_source_id(0, cell)`),
+  deprecated since 4.3 in favour of `TileMapLayer`; keeps
+  `current = true`, which no longer exists; and, while adding types, writes
+  `var point := spawn_points.pop_back()` or
+  `var data := JSON.parse_string(...)`, a parse error because both return
+  Variant. The yield/await graders check the coroutine port. No Godot binary
+  runs; the graders read the written files. Run with --allow-tools Write.
+tags: [migration, typing, tilemap]
+context:
+  add_dirs: [game]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the godot skill. The project in `game/`, one of your additional
+    working directories, was written for Godot 3; we converted
+    project.godot and levels/tileset.tres to Godot 4.4 by hand, but
+    `levels/level_01.gd` and `levels/level_01.tscn` are still Godot 3. The
+    folder is read-only and no Godot binary is available. Port both files
+    to Godot 4.4 without changing what the level does, with static types.
+    Write the two ported files to `levels/level_01.gd` and
+    `levels/level_01.tscn` in the current working directory.
+graders:
+  - name: script-written
+    type: file_exists
+    path: levels/level_01.gd
+  - name: scene-written
+    type: file_exists
+    path: levels/level_01.tscn
+  - name: no-yield
+    type: regex
+    pattern: '\byield\s*\('
+    match: not_contains
+    target: {source: file, path: levels/level_01.gd}
+  - name: await-timer
+    type: regex
+    pattern: '\bawait\s+get_tree\(\)\.create_timer\([^)\n]*\)\.timeout\b'
+    target: {source: file, path: levels/level_01.gd}
+  - name: tilemaplayer-node
+    type: regex
+    pattern: 'type="TileMapLayer"'
+    target: {source: file, path: levels/level_01.tscn}
+  - name: no-tilemap-node
+    type: regex
+    pattern: 'type="TileMap"'
+    match: not_contains
+    target: {source: file, path: levels/level_01.tscn}
+  - name: tilemaplayer-api
+    type: regex
+    pattern: '\b(?:world_to_map|get_cellv|set_cellv)\b|\b(?:get_cell_source_id|get_cell_atlas_coords|erase_cell|set_cell)\(\s*0\s*,|(?::|\bas|\bextends)\s*TileMap\b'
+    match: not_contains
+    target: {source: file, path: levels/level_01.gd}
+  - name: no-camera-current-script
+    type: regex
+    pattern: '\.current\s*='
+    match: not_contains
+    target: {source: file, path: levels/level_01.gd}
+  - name: no-camera-current-scene
+    type: regex
+    pattern: '^current\s*='
+    flags: m
+    match: not_contains
+    target: {source: file, path: levels/level_01.tscn}
+  - name: no-variant-inference
+    type: regex
+    pattern: '\bvar\s+\w+\s*:=\s*(?:JSON\.parse_string\(|(?:max|min|clamp)\(|[\w.\[\]"'']*\.(?:get|get_data|pop_back|pop_front|pick_random|front|back)\(|[\w.]+\[\s*["''])'
+    match: not_contains
+    target: {source: file, path: levels/level_01.gd}
+  - name: no-godot3-api
+    type: regex
+    pattern: 'File\.new\(|parse_json\(|\.instance\(\)|(?<!@)\b(?:export|onready)\s+var\b'
+    match: not_contains
+    target: {source: file, path: levels/level_01.gd}
+  - name: scene-format-3
+    type: regex
+    pattern: '^\[gd_scene\b[^\]]*\bformat=3\b'
+    flags: m
+    target: {source: file, path: levels/level_01.tscn}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

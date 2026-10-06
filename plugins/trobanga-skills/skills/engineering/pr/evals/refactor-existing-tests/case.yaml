@@ -1,0 +1,53 @@
+schema_version: "1.1"
+name: refactor-existing-tests
+description: >
+  A pure refactor branch (one formatting function extracted, tests
+  untouched). Targets the default failures of padding the body with a
+  test-count or coverage claim instead of naming the existing tests that
+  cover the changed code and that the PR leaves unchanged, of a Summary
+  with no diagram or diff sketch, and of adding a Risks section with no
+  trigger. Run with --scaffold --allow-tools Write "Bash(git:*)"
+  "Bash(python3:*)".
+tags: [refactor]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    Use the pr skill. Write the pull request body for the current branch
+    against `main` to `pr-body.md`. Do not run `gh`.
+graders:
+  - name: body-written
+    type: file_exists
+    path: pr-body.md
+  - name: refactor-heading
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Refactor'
+    flags: m
+  - name: names-existing-tests
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: 'test_report|test_overdue_lists_only_late_loans|test_weekly_lists_all_loans'
+  - name: summary-has-sketch
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Summary[\s\S]*?^```[\s\S]*?^## Refactor'
+    flags: m
+  - name: no-counts-or-coverage
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: 'coverage|\d+(\.\d+)? ?%|\d+ (tests?|passed)'
+    flags: i
+    match: not_contains
+  - name: no-risks-section
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Risks'
+    flags: m
+    match: not_contains
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

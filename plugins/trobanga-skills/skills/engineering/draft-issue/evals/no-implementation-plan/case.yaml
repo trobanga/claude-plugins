@@ -1,0 +1,56 @@
+schema_version: "1.1"
+name: no-implementation-plan
+description: >
+  A feature discussion that mixes decisions already made with a rough
+  step-by-step plan. Targets the default failure of copying the plan
+  (migration, column, endpoint, UI steps) into the issue, and of repeating
+  the motivation after the lede, while the decisions (limit of three
+  renewals, refused while someone has reserved the tool) must survive.
+  Read-only; needs no grants.
+tags: [scope]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the draft-issue skill. Draft an issue for this:
+
+    Members keep asking to extend a Loan instead of returning the tool and
+    borrowing it again, which costs them a trip. We decided: a Member can
+    renew a Loan from the app, each renewal adds seven days, at most three
+    renewals per Loan, and a renewal is refused while another Member has
+    reserved that tool.
+
+    Here's roughly how I'd build it: step 1, a migration adding a
+    `renewal_count` column to `loans`; step 2, a `PATCH /loans/{id}/renew`
+    endpoint that checks the count and the reservations table; step 3, a
+    "Renew" button on the loan screen; step 4, update the reminder e-mail.
+graders:
+  - name: no-plan-identifiers
+    type: regex
+    pattern: 'renewal_count|PATCH|migration|ALTER TABLE'
+    flags: i
+    match: not_contains
+  - name: no-steps
+    type: regex
+    pattern: '(^|\n)\s*(Step \d|\d+\.\s)'
+    flags: i
+    match: not_contains
+  - name: limit-kept
+    type: regex
+    pattern: '(three|3)[^\n]{0,40}renewal|renew[^\n]{0,60}(three|3)'
+    flags: i
+  - name: reservation-rule-kept
+    type: regex
+    pattern: 'reserv'
+    flags: i
+  - name: no-plan
+    type: llm
+    criteria: >
+      PASS if the issue states what Members can do and the decided rules,
+      but leaves the design to the implementer: it prescribes no order of
+      work, no schema change, no endpoint and no UI element. FAIL if it
+      contains an implementation plan or any of those prescriptions.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

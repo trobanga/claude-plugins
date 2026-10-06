@@ -1,0 +1,35 @@
+schema_version: "1.1"
+name: callers-incl-dynamic
+description: >
+  The user points at one file; it has two static callers and one caller
+  reached only by a string in a job registry. Targets the default failure
+  of explaining the file itself, or listing only the callers an import
+  search finds, instead of a map of the surrounding modules with every
+  caller. The skill sets disable-model-invocation, so prepare it with
+  evaluate-skill before running. Read-only; needs no grants.
+tags: [callers]
+context:
+  add_dirs: [toolshed]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the zoom-out skill. I'm looking at src/stl/reconcile.py in the
+    `toolshed` folder (one of your additional working directories).
+graders:
+  - name: caller-nightly
+    type: regex
+    pattern: 'nightly'
+  - name: caller-api
+    type: regex
+    pattern: 'routes(\.py)?|get_reconciliation'
+  - name: caller-registry
+    type: regex
+    pattern: 'registry|post-settlement-check|jobs\.yaml'
+  - name: dependencies
+    type: regex
+    pattern: '(ledger|Ledger)[\s\S]*(bank|payouts)|(bank|payouts)[\s\S]*(ledger|Ledger)'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

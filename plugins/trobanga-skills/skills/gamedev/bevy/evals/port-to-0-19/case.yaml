@@ -1,0 +1,77 @@
+schema_version: "1.1"
+name: port-to-0-19
+description: >
+  Port a Bevy 0.16 main.rs to 0.19 after the Cargo.toml bump, with no
+  compiler output available. Each presence grader checks one rename from the
+  skill's old-patterns table; one grader checks that no old API remains.
+  Hypothesis: a default agent knows at most the 0.17 renames (messages,
+  On<E>) and keeps or invents names for the 0.18/0.19 ones — SceneRoot and
+  SceneInstanceReady, the AmbientLight resource, clear_children,
+  Gizmos::cuboid, and a bare f32 font_size. Run with --allow-tools Write.
+tags: [api, migration]
+context:
+  add_dirs: [knight]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    The Bevy crate `knight` is one of your additional working directories;
+    it is read-only. We bumped bevy from 0.16 to 0.19 in its Cargo.toml and
+    ran `cargo update`; `cargo check` now fails on `src/main.rs`, and I
+    cannot give you the compiler output. Port `src/main.rs` to Bevy 0.19
+    without changing what the game does. Write the complete ported file to
+    `src/main.rs` in the current working directory. Leave out comments that
+    describe what changed; I will read the diff. Use the bevy skill.
+graders:
+  - name: file-written
+    type: file_exists
+    path: src/main.rs
+  - name: world-asset-root
+    type: regex
+    pattern: '\bWorldAssetRoot\s*\('
+    target: {source: file, path: src/main.rs}
+  - name: world-instance-ready
+    type: regex
+    pattern: 'On<\s*WorldInstanceReady\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: lifecycle-observer
+    type: regex
+    pattern: 'On<\s*Add\s*,\s*Player\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: messages
+    type: regex
+    pattern: 'MessageReader<\s*DamageTaken\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: message-registered
+    type: regex
+    pattern: 'add_message::<\s*DamageTaken\s*>'
+    target: {source: file, path: src/main.rs}
+  - name: fallible-single
+    type: regex
+    pattern: '\.single_mut\(\)'
+    target: {source: file, path: src/main.rs}
+  - name: global-ambient-light
+    type: regex
+    pattern: 'insert_resource\(\s*GlobalAmbientLight\b'
+    target: {source: file, path: src/main.rs}
+  - name: detach-children
+    type: regex
+    pattern: '\.detach_all_children\(\)'
+    target: {source: file, path: src/main.rs}
+  - name: gizmo-cube
+    type: regex
+    pattern: '\.cube\s*\('
+    target: {source: file, path: src/main.rs}
+  - name: font-size-px
+    type: regex
+    pattern: 'font_size:\s*FontSize::Px\('
+    target: {source: file, path: src/main.rs}
+  - name: no-old-api
+    type: regex
+    pattern: '\b(SceneRoot|SceneInstanceReady|OnAdd|EventReader|EventWriter|add_event|get_single|get_single_mut|clear_children)\b|Trigger<|\.cuboid\(|bevy::scene\b|insert_resource\(\s*AmbientLight\b'
+    match: not_contains
+    target: {source: file, path: src/main.rs}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,63 @@
+schema_version: "1.1"
+name: bug-fix-before-after
+description: >
+  A bug-fix branch in a scaffolded git repo (main loses cents when
+  splitting a bill; the branch fixes it). Targets the default failures of
+  a PR body that describes the fix and lists test results instead of
+  showing real before/after output from the same command, that adds an
+  empty or "None" Risks section, and that forgets the close reference for
+  issue #42. Writes the body to a file; gh is never available. Run with
+  --scaffold --allow-tools Write "Bash(git:*)" "Bash(python3:*)".
+tags: [bug-fix]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    Use the pr skill. Write the pull request body for the current branch
+    against `main` to `pr-body.md`. The branch closes issue #42. Do not run
+    `gh`; I'll open the PR myself.
+graders:
+  - name: body-written
+    type: file_exists
+    path: pr-body.md
+  - name: summary-section
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Summary'
+    flags: m
+  - name: bug-fix-heading
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Bug Fix'
+    flags: m
+  - name: real-before-after
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '3\.33 3\.33 3\.33[\s\S]*3\.34 3\.33 3\.33'
+  - name: ran-the-cli
+    type: tool_used
+    tool: Bash
+    input_match: 'split\.py'
+  - name: closes-issue
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '(Closes|Fixes|Resolves) #42'
+    flags: i
+  - name: no-risks-section
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Risks'
+    flags: m
+    match: not_contains
+  - name: no-test-counts
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '\d+ (tests?|passed)|tests? pass|all tests'
+    flags: i
+    match: not_contains
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

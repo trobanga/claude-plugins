@@ -1,0 +1,78 @@
+schema_version: "1.1"
+name: fix-refused-deck
+description: >
+  Repair a deck the parser refused. The pasted refusal names only line 6 (a
+  `## ` heading), but the deck breaks six more rules: a non-blank line below
+  `@qr`, a loose line on a slide with `@area`, `@palette` on a slide, an area
+  off the 1920-wide canvas, an unclosed `*` and a `--` build mark with nothing
+  below it. Hypothesis: a default agent fixes the named line and stops, since
+  it has no account of the slide language. The skill sends it to
+  slide-language.md and makes a clean parse the completion criterion. No
+  network and no Bash: the graders read the repaired file. Run with
+  --allow-tools Write.
+tags: [fix]
+context:
+  add_dirs: [broken]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the beamcast skill. Beamcast refused my deck `broken/talk.bc` (the
+    folder is one of your additional working directories) with:
+
+        HTTP 422
+        line 6: heading below the first level
+
+    Fix the deck so that it parses, keeping its content, and write the fixed
+    deck to `talk.bc` in the current directory. The `broken` folder is
+    read-only.
+graders:
+  - name: written
+    type: file_exists
+    path: talk.bc
+  - name: named-line-fixed
+    type: regex
+    pattern: '^#{2,}\s'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: nothing-below-qr
+    type: regex
+    pattern: '^@qr[^\n]*\n[ \t]*Scan me'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: no-loose-agenda-line
+    type: regex
+    pattern: '^---\nAgenda$'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: palette-in-header-only
+    type: regex
+    pattern: '^---$[\s\S]*^@palette'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: area-on-canvas
+    type: regex
+    pattern: '^@area 1200 80 900 '
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: mark-closed
+    type: regex
+    pattern: '^- processes are \*cheap[ \t]*$'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: no-empty-build-step
+    type: regex
+    pattern: '^--\n(?:---$|@)'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: rewrite-runbook
+description: >
+  Rewrite a runbook paragraph full of long noun clusters, passive voice,
+  future tense and conditions placed after the instruction. Hypothesis: a
+  default agent shortens the text but keeps clusters such as "connection pool
+  timeout configuration value" and passive or future forms, and may drop a
+  number while rewriting. ste is user-invoked: run it on a copy made by
+  evaluate-skill's `skill_eval.py prepare`.
+tags: [rewrite]
+execution:
+  max_turns: 6
+  allowed_tools: [Skill]
+  prompt: |
+    Use the ste skill. Then rewrite this runbook paragraph:
+
+    > The connection pool timeout configuration value should be increased to
+    > 30 seconds by the on-call engineer prior to the commencement of the
+    > nightly batch import job, which will otherwise be terminated by the
+    > database server connection limit enforcement mechanism once more than
+    > 200 connections have been opened, unless max_connections has already
+    > been raised.
+graders:
+  - name: no-long-noun-cluster
+    type: regex
+    pattern: 'connection pool timeout|database server connection|connection limit enforcement|batch import job'
+    flags: i
+    match: not_contains
+  - name: no-passive-or-future
+    type: regex
+    pattern: '\b(will|would|should)\b|\b(be|been|is|are)\s+(increased|terminated|opened|raised)\b'
+    flags: i
+    match: not_contains
+  - name: unapproved-words
+    type: regex
+    pattern: '\b(prior to|commencement|commence\w*|enforcement)\b'
+    flags: i
+    match: not_contains
+  - name: facts-kept
+    type: regex
+    pattern: '30 (seconds|s)\b[\s\S]*200|200[\s\S]*30 (seconds|s)\b'
+  - name: name-kept
+    type: regex
+    pattern: 'max_connections'
+  - name: condition-first
+    type: llm
+    criteria: >
+      PASS if the rewrite states the condition about max_connections
+      before the instruction it governs (for example "If max_connections
+      is ... , do ..."), and the instruction to raise the timeout is a
+      command addressed to the on-call engineer. FAIL otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

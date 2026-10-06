@@ -1,0 +1,1570 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.291",
+  "costUsd": 4.12,
+  "partial": false,
+  "suite": {
+    "ablation": "with-without",
+    "modelOverride": "sonnet",
+    "judgeModel": "sonnet",
+    "threshold": 0
+  },
+  "cases": [
+    {
+      "name": "group-by-label",
+      "dir": "evals/group-by-label",
+      "runsPerCase": 3,
+      "graders": [
+        {
+          "name": "written",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "grouped",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "every-pr-once",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "other-group",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "headings",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "no-invented-prs",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "arm": "with-only"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.8333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.8333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.3333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.5,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.3333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0.8888666666666666,
+        "passRate": 0.3333333333333333,
+        "scoreWithout": 0.38886666666666664,
+        "passRateWithout": 0.0,
+        "delta": 0.49999999999999994
+      }
+    },
+    {
+      "name": "since-last-tag",
+      "dir": "evals/since-last-tag",
+      "runsPerCase": 3,
+      "graders": [
+        {
+          "name": "written",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "grouped",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "every-pr-once",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "other-group",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "headings",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "no-invented-prs",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "arm": "with-only"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 0.8333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.6667,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.8333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.8333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6667,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6667,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0.7777666666666666,
+        "passRate": 0.0,
+        "scoreWithout": 0.7222333333333334,
+        "passRateWithout": 0.0,
+        "delta": 0.05553333333333321
+      }
+    },
+    {
+      "name": "no-tag-yet",
+      "dir": "evals/no-tag-yet",
+      "runsPerCase": 3,
+      "graders": [
+        {
+          "name": "written",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "grouped",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "every-pr-once",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "other-group",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "headings",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "no-invented-prs",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "arm": "with-only"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1.0,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1.0,
+        "passRate": 1.0,
+        "scoreWithout": 1.0,
+        "passRateWithout": 1.0,
+        "delta": 0.0
+      }
+    },
+    {
+      "name": "monorepo-tags",
+      "dir": "evals/monorepo-tags",
+      "runsPerCase": 3,
+      "graders": [
+        {
+          "name": "written",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "grouped",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "every-pr-once",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "other-group",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "headings",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "no-invented-prs",
+          "type": "llm",
+          "weight": 1
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "arm": "with-only"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 0.6667,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.5,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0.5,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..\u221e)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.5,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.3333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.3333,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.21,
+            "error": null,
+            "graders": [
+              {
+                "name": "written",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "grouped",
+                "passed": true,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "every-pr-once",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "other-group",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "headings",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-invented-prs",
+                "passed": false,
+                "weight": 1,
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0.5555666666666667,
+        "passRate": 0.0,
+        "scoreWithout": 0.38886666666666664,
+        "passRateWithout": 0.0,
+        "delta": 0.16670000000000001
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: record-term-then-next-question
+description: >
+  Mid-session: the pasted transcript resolves a term (Hold) and a scope
+  rule. Targets the default failure of carrying on with the interview and
+  postponing the glossary to the end, and of asking several questions at
+  once. The skill sets disable-model-invocation, so prepare it with
+  evaluate-skill (which drops that flag) before running; it also calls the
+  grilling and domain-modeling skills, which a single-skill target does not
+  load. Run with --allow-tools Write Edit.
+tags: [glossary, interview]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the grill-with-docs skill. You may write files without asking. We
+    are mid-session; here is the transcript so far.
+
+    Plan: Members of our tool library can reserve a tool that is currently
+    out on Loan.
+
+    You: When a reserved tool comes back, is it kept aside for the Member
+    who reserved it, and for how long? Recommended: 48 hours.
+    Me: Yes, 48 hours. Call that period a Hold, not a "reservation window"
+    or a "lock".
+    You: Can a Member reserve a tool that is on the shelf? Recommended: no.
+    Me: No. Only tools out on Loan can be reserved; tools on the shelf are
+    just borrowed.
+
+    Continue.
+graders:
+  - name: glossary-written
+    type: file_exists
+    path: GLOSSARY.md
+  - name: hold-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*Hold\*\*'
+  - name: hold-avoid-list
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '_Avoid_:[^\n]*(reservation window|lock)'
+    flags: i
+  - name: one-new-question
+    type: llm
+    criteria: >
+      PASS if the final message asks exactly one new question about the
+      reservation plan (not one the transcript already answered) and gives a
+      recommended answer to it. FAIL if it asks two or more questions,
+      repeats an answered one, or asks none.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

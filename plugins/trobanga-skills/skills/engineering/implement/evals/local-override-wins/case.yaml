@@ -1,0 +1,49 @@
+schema_version: "1.1"
+name: local-override-wins
+description: >
+  Two config files disagree: the shared .agents/issue-tracker.md says GitHub
+  with `{id}-{slug}`, the untracked .agents/issue-tracker.local.md says
+  tracker `none`, forge `none`, `{id}--{slug}`. Targets the default failure
+  of reading only the shared file (or the remote), calling `gh issue view
+  214`, and naming the branch `214-retry-...`. The skill's lookup order
+  (resolve-config.md) puts the local file first, so the branch must be
+  `214--retry-failed-uploads-with-backoff` (branch_name.py output for this
+  id and title) with no `gh` call. Run with --scaffold --allow-tools Bash.
+tags: [phase-0, lookup-order]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, AskUserQuestion]
+  prompt: |
+    Use the implement skill on issue 214, "Retry failed uploads with
+    backoff": a failed upload in `uploader.py` should be retried three times
+    with exponential backoff.
+
+    Setup only for now: stop once the worktree exists, write no code, and
+    report the resolved tracker, forge and branch format, where each came
+    from, the branch name and the worktree path.
+graders:
+  - name: branch-name-local-format
+    type: regex
+    pattern: '214--retry-failed-uploads-with-backoff'
+    target: last_message
+  - name: no-github-calls
+    type: tool_used
+    tool: Bash
+    input_match: '(^|[^a-z])gh '
+    min: 0
+    max: 0
+    arm: both
+  - name: resolved-from-local-file
+    type: llm
+    criteria: >
+      PASS if the final message reports tracker none and forge none (plain
+      git) and names .agents/issue-tracker.local.md as their source. FAIL if
+      it reports GitHub as the tracker or the forge in use, or names only
+      .agents/issue-tracker.md as the source.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?implement"'
+    arm: with-only

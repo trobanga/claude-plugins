@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: ts-threshold-boundary
+description: >
+  Hypothesis: without the skill an agent reads "threshold 8" as "fail above
+  8" and passes normalize, whose score is exactly 8.0 (cc 8, full branch
+  coverage); or it scores every function in the changed file, including
+  the untouched legacyDecode (CRAP 30.0). The skill scores only functions
+  that hold an added line and fails at or above the threshold. Expected
+  values, computed with crap_score.py on the scaffolded repo: normalize
+  8.0 fails, splitFields 2.1 passes, branch fails (exit 1). Toolchain-free:
+  the Istanbul report is pre-built, no node_modules are needed. Run with
+  --scaffold --allow-tools Bash.
+tags: [typescript, threshold]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the crap-score skill with threshold 8. Does the branch feature pass
+    against origin/main? CI built coverage/coverage-final.json (Istanbul,
+    via Vitest) from HEAD a minute ago; node_modules is not installed and
+    there is no network here, so use that report instead of rerunning the
+    tests. Give the CRAP score of every function the branch changed and a
+    pass/fail verdict.
+graders:
+  - name: normalize-8.0
+    type: regex
+    pattern: 'normalize[^\n]*\b8\.0\b|\b8\.0\b[^\n]*normalize'
+    target: last_message
+  - name: splitFields-2.1
+    type: regex
+    pattern: 'splitFields[^\n]*\b2\.1\b|\b2\.1\b[^\n]*splitFields'
+    target: last_message
+  - name: branch-fails-at-threshold
+    type: llm
+    criteria: >
+      PASS if the reply's verdict is that the branch fails the threshold
+      because normalize scores 8.0, which is at the threshold of 8. FAIL if
+      the reply says the branch passes, or treats a score of exactly 8 as
+      acceptable.
+  - name: untouched-not-scored
+    type: llm
+    criteria: >
+      PASS if the reply does not present legacyDecode as a changed function
+      with a CRAP score (saying it is unchanged and not scored is fine).
+      FAIL if legacyDecode appears among the scored functions or the
+      violations.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

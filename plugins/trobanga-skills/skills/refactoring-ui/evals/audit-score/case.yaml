@@ -1,0 +1,53 @@
+schema_version: "1.1"
+name: audit-score
+description: >
+  Audit a profile card with clear defects: arbitrary spacing values (13, 17,
+  22 px), labels styled exactly like their values, gray-400 body text on
+  white, a long centred paragraph, an opaque gray shadow and a screaming red
+  button for a routine action. The skill scores against its eight-row Quick
+  Diagnostic and names the rows to fix. Hypothesis: a default agent gives
+  general taste feedback, no score, and misses that gray-400 on white fails
+  WCAG AA. Read-only case.
+tags: [audit]
+context:
+  add_dirs: [ui]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the refactoring-ui skill. My profile card looks amateur. Audit
+    `ui/profile-card.html` (the `ui` folder is one of your additional
+    working directories) and tell me what to fix first.
+graders:
+  - name: low-score
+    type: regex
+    pattern: '\b[0-5](?:\.\d)?\s*/\s*10\b'
+  - name: contrast
+    type: llm
+    criteria: >
+      PASS if the answer says the gray-400 paragraph text on white fails
+      the WCAG AA contrast ratio of 4.5:1 for body text (a stated ratio
+      near 2.5:1 is a plus) and proposes gray-500 or darker. FAIL otherwise.
+  - name: spacing-scale
+    type: llm
+    criteria: >
+      PASS if the answer flags the arbitrary bracket values (such as
+      p-[13px], mt-[17px], gap-[22px]) as off a spacing scale and maps them
+      to scale steps such as 4, 8, 16, 24 or 32 px. FAIL otherwise.
+  - name: labels
+    type: llm
+    criteria: >
+      PASS if the answer flags that the labels (Email, Team, Location,
+      Joined) carry the same size, weight and colour as their values, and
+      proposes making the labels smaller, lighter or small uppercase.
+      FAIL otherwise.
+  - name: text-width
+    type: llm
+    criteria: >
+      PASS if the answer flags the centred multi-line paragraph, proposing
+      left alignment or a constrained width (for example max-w-prose).
+      FAIL otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

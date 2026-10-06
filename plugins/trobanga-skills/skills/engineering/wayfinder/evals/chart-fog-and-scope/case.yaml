@@ -1,0 +1,86 @@
+schema_version: "1.1"
+name: chart-fog-and-scope
+description: >
+  Charting after the grilling is done: destination named, breadth-first
+  pass done, with four sharp open questions, one patch of fog (how dunning
+  interacts with the ledger, not yet phrasable) and one exclusion (US
+  customers). Targets the default failures of pre-slicing the fog into
+  tickets, filing the exclusion under "not yet specified", and producing
+  build tasks instead of decision tickets. The skill must write the map
+  with its five sections (fog under Not yet specified, US under Out of
+  scope, Decisions so far empty) and typed decision tickets (the bank
+  sandbox signup is a task, the PDF look a prototype). The run cannot reach
+  GitHub, so issues go to files under wayfinder-out/. The skill sets
+  disable-model-invocation, so run it through evaluate-skill's prepare
+  step; run with --scaffold --allow-tools Bash Write.
+tags: [chart, fog]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Use the wayfinder skill to chart the map. We have done both grilling
+    rounds already; here is where we landed.
+
+    Destination: a locked spec for running EU customers' subscriptions on
+    our own ledger instead of Stripe Billing.
+
+    Open questions we can state sharply now:
+    - Do we adopt an existing double-entry ledger library or build our
+      own? Needs a look at the candidate libraries' docs.
+    - How do we prorate a mid-cycle plan change?
+    - What should the invoice PDF look like? I want to react to a rough
+      mock-up.
+    - We need a sandbox account at our bank before we can judge the shape
+      of its payment webhooks; nobody has one yet.
+
+    Hazy: something about how dunning will interact with the ledger; we
+    can't phrase that until proration is settled.
+
+    Ruled out: US customers. Not part of this effort.
+
+    This sandbox cannot reach GitHub: write the map to
+    `wayfinder-out/map.md` and each ticket to its own file under
+    `wayfinder-out/`, with its title, labels and blocking edges at the top
+    and its body below. Do not start any research yet.
+graders:
+  - name: map-written
+    type: file_exists
+    path: wayfinder-out/map.md
+  - name: map-sections
+    type: regex
+    pattern: 'Destination[\s\S]*Notes[\s\S]*Decisions so far[\s\S]*Not yet specified[\s\S]*Out of scope'
+    target: {source: file, path: wayfinder-out/map.md}
+  - name: map-label
+    type: regex
+    pattern: 'wayfinder:map'
+    target: {source: file, path: wayfinder-out/map.md}
+  - name: fog-and-scope-placed
+    type: llm
+    focus: {source: file, path: wayfinder-out/map.md}
+    criteria: >
+      PASS if the dunning question appears under "Not yet specified", US
+      customers appear under "Out of scope" and not under "Not yet
+      specified", and "Decisions so far" lists no decisions. FAIL otherwise.
+  - name: fog-not-ticketed
+    type: regex
+    pattern: 'wayfinder-out/[^\n]*dunning'
+    flags: i
+    match: not_contains
+    target: files
+  - name: task-ticket-typed
+    type: tool_used
+    tool: Write
+    input_match: 'wayfinder-out/(?!map\.md)[^"]*".*wayfinder:task'
+    min: 1
+  - name: prototype-ticket-typed
+    type: tool_used
+    tool: Write
+    input_match: 'wayfinder-out/(?!map\.md)[^"]*".*wayfinder:prototype'
+    min: 1
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?wayfinder"'
+    arm: with-only

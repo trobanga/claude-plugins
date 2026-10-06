@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: elixir-no-excoveralls
+description: >
+  Hypothesis: without the skill an agent writes ExUnit tests for the
+  uncovered safe_div/2 clauses and claims the coverage went up, without
+  any patch coverage measurement behind the claim. With the skill, step 2
+  runs patch-coverage-elixir.sh, which fails at once because ExCoveralls
+  is missing from mix.exs; with no measured start coverage the loop cannot
+  run, so the agent should pass the prerequisite on and stop. Caveat: step
+  2 of the skill does not say what to do when the coverage script fails,
+  so this case also tests how the skill handles that gap. Workflow is not
+  in allowed_tools, so the loop can never start. Run with --scaffold
+  --allow-tools Bash Write Edit (Write and Edit are granted so that
+  writing a test is possible and the no-test graders mean something).
+  Prepare the skill with evaluate-skill's skill_eval.py prepare, which
+  copies the sibling patch-coverage skill the scripts live in.
+tags: [elixir, prerequisite]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  prompt: |
+    Use the improve-coverage skill. Raise the patch coverage of my branch
+    feature against origin/main to 95%.
+graders:
+  - name: names-excoveralls
+    type: regex
+    pattern: 'excoveralls'
+    flags: i
+    target: last_message
+  - name: no-unmeasured-claim
+    type: llm
+    criteria: >
+      PASS if the reply says patch coverage cannot be measured until
+      ExCoveralls is set up, and claims neither a patch coverage number
+      nor that coverage rose or the 95% target was reached. FAIL if it
+      reports a coverage percentage for the branch or says coverage
+      improved.
+  - name: no-new-test-file
+    type: file_exists
+    path: '**/*_test.exs'
+    exists: false
+  - name: no-edited-test
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

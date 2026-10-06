@@ -1,0 +1,81 @@
+schema_version: "1.1"
+name: write-deck
+description: >
+  Write a five-slide deck from an outline whose wording invites Markdown habits
+  ("subheading", "in bold", a pause before the third bullet). Hypothesis: a
+  default agent writes Markdown, so `## ` headings, `**bold**` and loose lines
+  next to `@area`, none of which the Beamcast parser accepts, and it misses the `--` build mark. The
+  graders check the written .bc file and that the agent runs the offline-safe
+  `check` step and does not push. No token is set and the sandbox has no
+  network, so `check` fails before or at the request; the case never reaches
+  the API. Run with --allow-tools Write Bash.
+tags: [write]
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Use the beamcast skill. Write a Beamcast deck to `talk.bc` in the current
+    directory for a five-slide lightning talk, and check that it parses. Do
+    not push it; I will push it myself.
+
+    1. Title "Let it crash", with the subheading "Fault tolerance on the
+       BEAM", and the audience QR code in the bottom-right corner.
+    2. "Why processes?" with three bullets: processes are cheap (about 2 KB
+       each), every process has its own heap, crashes stay local. Pause
+       before the third bullet so it appears only when I press next.
+    3. A poll: "Which BEAM language do you use?" with Elixir, Erlang, Gleam
+       and "None yet".
+    4. The quote "Let it crash" by Joe Armstrong, with the word crash in
+       bold, and the presenter note "pause here".
+    5. "Thank you" and the link https://example.com/let-it-crash.
+graders:
+  - name: written
+    type: file_exists
+    path: talk.bc
+  - name: no-second-level-heading
+    type: regex
+    pattern: '^#{2,}\s'
+    flags: m
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: no-markdown-bold
+    type: regex
+    pattern: '\*\*'
+    match: not_contains
+    target: {source: file, path: talk.bc}
+  - name: build-mark
+    type: regex
+    pattern: '^--$'
+    flags: m
+    target: {source: file, path: talk.bc}
+  - name: poll-block
+    type: regex
+    pattern: '^@poll \d+ \d+ \d+ \d+\n[^\n]*BEAM language[^\n]*\n- Elixir\n- Erlang\n- Gleam\n- None yet'
+    flags: m
+    target: {source: file, path: talk.bc}
+  - name: layout-rules
+    type: llm
+    focus: {source: file, path: talk.bc}
+    criteria: >
+      PASS if, on every slide (slides are separated by lines of exactly
+      `---`) that contains an `@area`, `@poll`, `@qr`, `@video` or `@page`
+      line, no content line appears before that slide's first directive,
+      and every `@area`/`@poll`/`@qr` line has four whole numbers x y w h
+      with x + w <= 1920 and y + h <= 1080, and `@qr` is followed by no
+      non-blank line other than another directive or `---`. FAIL otherwise.
+  - name: ran-check
+    type: tool_used
+    tool: Bash
+    input_match: 'bc\.sh[^"]*\bcheck\b'
+    arm: with-only
+  - name: no-push
+    type: tool_used
+    tool: Bash
+    input_match: 'bc\.sh[^"]*\b(push|new)\b'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

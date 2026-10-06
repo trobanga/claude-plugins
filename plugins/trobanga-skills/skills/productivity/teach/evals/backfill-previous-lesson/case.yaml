@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: backfill-previous-lesson
+description: >
+  Add lesson 2 to a workspace whose lesson 1 ends on a `soon` placeholder.
+  The skill makes "create a lesson" include three edits: the new lesson's own
+  `soon` next card, a real link from lesson 1 to lesson 2, and a regenerated
+  index; and every code block gets a copy button. Hypothesis: a default agent
+  writes lesson 2 and leaves lesson 1 and the index untouched. teach is
+  user-invoked: run it on a copy made by evaluate-skill's `skill_eval.py
+  prepare`. The workspace is built by scaffold.sh: run with --scaffold
+  --allow-tools Write Edit.
+tags: [navigation]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the teach skill. Build the next lesson in this workspace: the pipe
+    operator `|>`.
+graders:
+  - name: new-lesson
+    type: file_exists
+    path: 'lessons/0002-*.html'
+  - name: previous-backfilled
+    type: regex
+    pattern: '<a[^>]*href="0002-[a-z0-9-]+\.html"'
+    target: {source: file, path: lessons/0001-pattern-matching.html}
+  - name: no-stale-placeholder
+    type: regex
+    pattern: 'nextnav-card soon'
+    match: not_contains
+    target: {source: file, path: lessons/0001-pattern-matching.html}
+  - name: index-updated
+    type: regex
+    pattern: 'href="0002-[a-z0-9-]+\.html"'
+    target: {source: file, path: lessons/index.html}
+  - name: new-next-is-placeholder
+    type: tool_used
+    tool: Write
+    input_match: 'lessons/0002-[\s\S]*nextnav-card soon'
+  - name: copy-button
+    type: tool_used
+    tool: Write
+    input_match: 'lessons/0002-[\s\S]*copy-btn'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

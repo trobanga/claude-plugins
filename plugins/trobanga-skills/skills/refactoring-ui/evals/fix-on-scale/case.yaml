@@ -1,0 +1,63 @@
+schema_version: "1.1"
+name: fix-on-scale
+description: >
+  Rewrite a settings form whose every gap is 12 px, whose sizes are
+  arbitrary bracket values, whose helper text is gray-400, whose text is pure
+  black, and whose Save and Cancel buttons look identical. Hypothesis: a
+  default agent tidies the markup but keeps bracket values or nudges them to
+  other arbitrary numbers, keeps equal spacing between and within groups, and
+  leaves the two buttons equal. The graders read the rewritten file. Run
+  with --allow-tools Write.
+tags: [fix]
+context:
+  add_dirs: [ui]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the refactoring-ui skill. Fix the design of `ui/settings-form.html`
+    (the `ui` folder is one of your additional working directories, and it
+    is read-only). Write the fixed markup to `settings-form.html` in the
+    current directory, still as Tailwind classes, keeping every field and
+    text.
+graders:
+  - name: written
+    type: file_exists
+    path: settings-form.html
+  - name: no-arbitrary-values
+    type: regex
+    pattern: '-\[\d+(?:\.\d+)?(?:px|rem|em)?\]'
+    match: not_contains
+    target: {source: file, path: settings-form.html}
+  - name: readable-gray
+    type: regex
+    pattern: 'text-gray-[1234]00\b'
+    match: not_contains
+    target: {source: file, path: settings-form.html}
+  - name: no-pure-black
+    type: regex
+    pattern: 'text-black\b|#000000|#000\b'
+    match: not_contains
+    target: {source: file, path: settings-form.html}
+  - name: width-constrained
+    type: regex
+    pattern: '\bmax-w-'
+    target: {source: file, path: settings-form.html}
+  - name: groups-apart
+    type: llm
+    focus: {source: file, path: settings-form.html}
+    criteria: >
+      PASS if the space between the field groups (Profile, Notifications)
+      is larger than the space between a label and its input. FAIL if the
+      two gaps are equal or the group gap is smaller.
+  - name: button-hierarchy
+    type: llm
+    focus: {source: file, path: settings-form.html}
+    criteria: >
+      PASS if Save is styled as the primary action (filled) and Cancel as a
+      secondary or tertiary action (outlined, muted or text only), so the
+      two buttons no longer look the same. FAIL otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

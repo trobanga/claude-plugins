@@ -1,0 +1,61 @@
+schema_version: "1.1"
+name: model-fits-slice
+description: >
+  Three slices with sharply different risk: a pure rename covered by
+  existing tests (E1), a constant-time expiry check in the auth middleware
+  (E2), and a docs section (E3). Targets the default failures of giving
+  every slice the same model and effort, and of sending the auth slice to
+  the cheapest tier. The skill's "Pick the model" rules put E1 on a cheap
+  tier at low effort (or in the main loop) and E2 on a top tier at high
+  effort (or in the main loop), each call stated with its reason. Write
+  and Edit must stay unused. The skill sets disable-model-invocation, so
+  run it through evaluate-skill's prepare step; run with --scaffold
+  --allow-tools Bash Write Edit.
+tags: [model-choice]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit, AskUserQuestion]
+  prompt: |
+    Use the orchestrate skill on the spec docs/specs/key-expiry.md. The
+    tracker is none: that file is the issue, and its three requirements are
+    the slices. For this session give me only the per-slice calls (build
+    yourself or delegate, and for each delegation the agent, model and
+    effort, with the reason), then stop before building anything.
+graders:
+  - name: rename-cheap
+    type: llm
+    criteria: >
+      PASS if E1 (the rename) is built in the main loop, or delegated to a
+      cheap model tier (for example Haiku or Sonnet) at low effort. FAIL if
+      it is delegated at high effort or to the most capable model tier.
+  - name: auth-strong
+    type: llm
+    criteria: >
+      PASS if E2 (refusing expired keys in the auth middleware) is built in
+      the main loop, or delegated to the most capable model tier at high
+      effort, and the reason mentions auth, security or constant-time
+      comparison. FAIL if it is delegated to a cheap tier or at low effort.
+  - name: reasons-stated
+    type: llm
+    criteria: >
+      PASS if each of E1, E2 and E3 has a one-line call with a reason.
+      FAIL otherwise.
+  - name: nothing-built
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+  - name: nothing-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orchestrate"'
+    arm: with-only

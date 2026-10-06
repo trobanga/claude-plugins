@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: dark-theme
+description: >
+  Add a dark theme for a set of light CSS tokens. The skill and its dark-mode
+  reference say: dark grays rather than pure black, off-white rather than pure
+  white, lighter and less saturated accents, and elevation shown by lighter
+  surfaces instead of shadows. Hypothesis: a default agent inverts the
+  palette (#000 / #fff), keeps the same blue and danger red, and keeps or
+  strengthens the shadows while the card surface stays as dark as the page.
+  Run with --allow-tools Write.
+tags: [dark-mode]
+context:
+  add_dirs: [ui]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the refactoring-ui skill. Add a dark theme for the tokens in
+    `ui/tokens.css` (the `ui` folder is one of your additional working
+    directories, and it is read-only). Write a `dark.css` in the current
+    directory that overrides every token under `[data-theme="dark"]`.
+graders:
+  - name: written
+    type: file_exists
+    path: dark.css
+  - name: no-pure-black-or-white
+    type: regex
+    pattern: '#000000|#000\b|#ffffff|#fff\b'
+    flags: i
+    match: not_contains
+    target: {source: file, path: dark.css}
+  - name: accent-adjusted
+    type: regex
+    pattern: '--color-primary:\s*#2563eb'
+    flags: i
+    match: not_contains
+    target: {source: file, path: dark.css}
+  - name: elevation-by-lightness
+    type: llm
+    focus: {source: file, path: dark.css}
+    criteria: >
+      PASS if --color-surface is a lighter colour than --color-bg in the
+      dark theme, and --shadow-card is `none` or a shadow no stronger than
+      the light theme's `0 4px 6px rgba(0, 0, 0, 0.1)`. FAIL if the surface
+      is as dark as or darker than the background, or the card shadow is
+      stronger than in the light theme.
+  - name: every-token
+    type: regex
+    pattern: '--color-bg[\s\S]*--color-surface|--color-surface[\s\S]*--color-bg'
+    target: {source: file, path: dark.css}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

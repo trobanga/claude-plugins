@@ -1,0 +1,35 @@
+schema_version: "1.1"
+name: asks-fixed-point
+description: >
+  Same repo as two-axes-cited, but the user names no fixed point. Targets
+  the default failure of assuming `main` (or the last commit, or the
+  working tree) and launching the review. The skill (step 1) must ask for
+  the fixed point and start no sub-agents before it has one.
+  Run with --scaffold --allow-tools Bash.
+tags: [fixed-point]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Agent, AskUserQuestion]
+  prompt: |
+    Use the conformance-review skill on my changes.
+graders:
+  - name: asks-for-fixed-point
+    type: llm
+    criteria: >
+      PASS if the final message (or a question the agent asked) asks the user
+      for the commit, branch, tag or ref to compare against, and presents no
+      review findings. It may suggest main as a likely answer. FAIL if it
+      presents Standards or Spec findings.
+  - name: no-subagents-before-answer
+    type: tool_used
+    tool: Agent
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?conformance-review"'
+    arm: with-only

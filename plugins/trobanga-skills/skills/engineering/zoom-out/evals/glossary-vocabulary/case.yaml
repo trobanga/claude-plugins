@@ -1,0 +1,40 @@
+schema_version: "1.1"
+name: glossary-vocabulary
+description: >
+  The code's names (StlMgr, stl_mgr, "stl" memos) are abbreviations the
+  glossary marks as Avoid; the glossary's terms are Settlement, Ledger,
+  Branch, Cross-branch Loan and Reconciliation. Targets the default failure
+  of a map phrased in the code's identifiers only, so the user still does
+  not learn what the area is for. The skill sets disable-model-invocation,
+  so prepare it with evaluate-skill before running. Read-only; needs no
+  grants.
+tags: [glossary]
+context:
+  add_dirs: [toolshed]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the zoom-out skill. What is StlMgr in src/stl/stl_mgr.py for? The
+    code is in the `toolshed` folder, one of your additional working
+    directories.
+graders:
+  - name: settlement-term
+    type: regex
+    pattern: 'Settlement'
+  - name: ledger-term
+    type: regex
+    pattern: 'Ledger'
+  - name: domain-language
+    type: llm
+    criteria: >
+      PASS if the answer explains the area in the glossary's terms: StlMgr
+      performs the month-end Settlement between Branches, computed from the
+      Ledger of Cross-branch Loans, and Reconciliation checks it afterwards;
+      code names may appear as labels next to these terms. FAIL if it
+      describes the modules only by their code names (StlMgr, stl, balances,
+      transfer) without the glossary terms.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

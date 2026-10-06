@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/coin.tscn" id="3_coin"]
+
+[node name="Main" type="Node2D"]
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(64, 96)
+
+[node name="Coin" parent="." instance=ExtResource("3_coin")]
+position = Vector2(128, 96)
+
+[node name="HUD" parent="." instance=ExtResource("2_hud")]

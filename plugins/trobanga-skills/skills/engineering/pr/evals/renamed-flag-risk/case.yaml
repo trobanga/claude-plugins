@@ -1,0 +1,49 @@
+schema_version: "1.1"
+name: renamed-flag-risk
+description: >
+  A branch that renames the CLI flag --out to --output and drops --out,
+  which a nightly job on the reporting host still passes. Targets the
+  default failure of treating a rename as harmless: no Risks section, or a
+  generic one that does not say what breaks, who notices, and how to
+  undo. Run with --scaffold --allow-tools Write "Bash(git:*)"
+  "Bash(python3:*)".
+tags: [risks]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Bash]
+  prompt: |
+    Use the pr skill. Write the pull request body for the current branch
+    against `main` to `pr-body.md`. Do not run `gh`.
+graders:
+  - name: body-written
+    type: file_exists
+    path: pr-body.md
+  - name: risks-section
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '^## Risks'
+    flags: m
+  - name: risk-names-old-flag
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '## Risks[\s\S]*--out\b'
+  - name: risk-line-complete
+    type: llm
+    focus: {source: file, path: pr-body.md}
+    criteria: >
+      PASS if the Risks section has a line saying that callers still
+      passing --out (such as the nightly export job on the reporting host)
+      will fail, who notices (for example the reporting job or its owners),
+      and either how to undo it or nothing beyond a plain revert. FAIL if
+      the section is missing, says "None", or only says the flag was
+      renamed without the consequence.
+  - name: run-shown
+    type: regex
+    target: {source: file, path: pr-body.md}
+    pattern: '--output'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

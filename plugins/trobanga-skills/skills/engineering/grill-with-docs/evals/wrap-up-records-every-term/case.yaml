@@ -1,0 +1,54 @@
+schema_version: "1.1"
+name: wrap-up-records-every-term
+description: >
+  The user ends a session whose transcript resolved three terms and one
+  hard-to-reverse decision, none of them written down yet. Targets the
+  default failure of closing with a chat summary and no docs, or of
+  recording only some of them; the completion rule is that every resolved
+  question has its doc entry. The skill sets disable-model-invocation, so
+  prepare it with evaluate-skill before running. Run with --allow-tools
+  Write Edit.
+tags: [glossary, adr, done-criterion]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the grill-with-docs skill. You may write files without asking.
+    Here is today's transcript; nothing has been written down yet.
+
+    You: When a reserved tool comes back, how long is it kept aside?
+    Me: 48 hours. Call it a Hold, not a "reservation window".
+    You: When several Members reserve the same tool, who gets it?
+    Me: First come, first served. Call the ordered list the Waitlist, not
+    the "queue".
+    You: What do we call a Member who lets a Hold expire without picking up?
+    Me: A No-show. Three No-shows in a year and the Member loses reserving
+    rights.
+    You: Where does the Waitlist live?
+    Me: In Lending's own database, not in the shared catalog service. We
+    weighed both; the catalog team won't take per-Member data because of
+    GDPR deletion requests, so moving it later means a data migration
+    across teams.
+
+    That's all for today. Wrap up.
+graders:
+  - name: hold-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*Hold\*\*'
+  - name: waitlist-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*Waitlist\*\*'
+  - name: no-show-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*No-show\*\*'
+    flags: i
+  - name: adr-for-waitlist-storage
+    type: file_exists
+    path: docs/adr/0001-*.md
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

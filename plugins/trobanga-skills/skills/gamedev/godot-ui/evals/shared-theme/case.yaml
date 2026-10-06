@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: shared-theme
+description: >
+  Three menu scenes whose buttons each carry their own, slightly different
+  StyleBoxFlat overrides, and no pressed style. The skill styles controls
+  through a Theme saved as a .tres resource, with normal, hover and pressed
+  styles. Hypothesis: a default agent equalises the per-node overrides, or
+  builds the theme in an autoload script, so restyling still means touching
+  several places. The graders read the files written. Run with
+  --allow-tools Write.
+tags: [theme]
+context:
+  add_dirs: [game]
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the godot-ui skill. In my Godot 4.3 project (the `game` folder, one
+    of your additional working directories, read-only) the buttons of
+    `scenes/ui/main_menu.tscn`, `pause_menu.tscn` and `settings.tscn` all
+    look slightly different. Make every menu button look the same, with a
+    visible pressed state, and make it possible to restyle all of them in
+    one place. Write every new or changed file into the current directory
+    under the same relative path it has in the project (for example
+    `scenes/ui/main_menu.tscn`).
+graders:
+  - name: theme-file
+    type: file_exists
+    path: '**/*.tres'
+  - name: theme-resource
+    type: tool_used
+    tool: Write
+    input_match: '\[gd_resource type=\\"Theme\\"'
+  - name: button-states
+    type: tool_used
+    tool: Write
+    input_match: '^(?=[\s\S]*Button/styles/normal)(?=[\s\S]*Button/styles/hover)(?=[\s\S]*Button/styles/pressed)'
+  - name: scenes-rewritten
+    type: file_exists
+    path: scenes/ui/main_menu.tscn
+  - name: no-per-node-styles
+    type: tool_used
+    tool: Write
+    input_match: 'scenes/ui/[a-z_]+\.tscn[\s\S]*theme_override_styles'
+    min: 0
+    max: 0
+    arm: both
+  - name: theme-applied
+    type: tool_used
+    tool: Write
+    input_match: 'theme = ExtResource|gui/theme/custom'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

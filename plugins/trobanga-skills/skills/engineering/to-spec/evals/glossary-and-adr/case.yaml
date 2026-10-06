@@ -1,0 +1,65 @@
+schema_version: "1.1"
+name: glossary-and-adr
+description: >
+  The conversation uses the loose term "reminder email" and suggests a cron
+  job that calls the mailer directly; the repo's GLOSSARY.md names the
+  concept "dunning notice" (avoid: reminder) and ADR 0003 forbids calling
+  the mailer outside the Outbox. Targets the default failure of copying the
+  conversation's vocabulary and design into the spec. The skill (step 1)
+  must use the glossary term and respect the ADR. The run cannot reach
+  GitHub, so the prompt asks for the body in spec-draft.md. The skill sets
+  disable-model-invocation, so run it through evaluate-skill's prepare
+  step; run with --scaffold --allow-tools Bash Write.
+tags: [glossary, adr]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Our discussion so far:
+
+    > me: customers forget to pay. I want reminder emails for overdue
+    > invoices: 7 days after the due date, then every 7 days, at most 3.
+    > Stop as soon as they pay.
+    > me: simplest thing: a nightly cron job that finds overdue invoices
+    > and calls mailer.send for each one.
+    > you: I'd test it through InvoiceService with the clock injected,
+    > like the existing tests. One seam.
+    > me: agreed, that's the seam.
+
+    Use the to-spec skill. This sandbox cannot reach GitHub: write the exact
+    shell command that would publish the spec to `publish.sh`, and the issue
+    body to `spec-draft.md`, instead of running it.
+graders:
+  - name: glossary-term
+    type: regex
+    pattern: 'dunning notice'
+    flags: i
+    target: {source: file, path: spec-draft.md}
+  - name: avoided-term-absent
+    type: regex
+    pattern: 'reminder e-?mail'
+    flags: i
+    match: not_contains
+    target: {source: file, path: spec-draft.md}
+  - name: respects-outbox-adr
+    type: llm
+    focus: {source: file, path: spec-draft.md}
+    criteria: >
+      PASS if the spec's implementation decisions send the notices by
+      writing them to the Outbox (in the same transaction as the state
+      change), and nowhere has a job or module call the mailer directly.
+      FAIL if the spec keeps the cron job calling the mailer directly.
+  - name: seam-in-testing-decisions
+    type: llm
+    focus: {source: file, path: spec-draft.md}
+    criteria: >
+      PASS if the Testing Decisions name InvoiceService as the module
+      tested, and the existing InvoiceService tests as prior art. FAIL
+      otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?to-spec"'
+    arm: with-only

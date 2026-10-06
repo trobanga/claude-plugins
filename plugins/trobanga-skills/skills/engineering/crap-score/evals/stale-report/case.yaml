@@ -1,0 +1,47 @@
+schema_version: "1.1"
+name: stale-report
+description: >
+  Hypothesis: without the skill an agent takes the coverage report it finds
+  in coverage/ at face value and scores slugify from it (8.1, cc 5, 50%),
+  although the report is older than the changed source and describes the
+  base version (the branch edited lines in place, so the line ranges still
+  fit and nothing in the file looks wrong). The skill says not to reuse an
+  old report, and crap_score.py --range refuses it ("older than changed
+  source ... rebuild the coverage report"). The rebuild cannot succeed
+  here (no node_modules, no network), so the right outcome is a reply that
+  the report is stale and must be rebuilt, with no score from it. The
+  not-stale-score grader also catches a run that bypasses the check with
+  --diff or by touching the report. Run with --scaffold --allow-tools Bash.
+tags: [typescript, stale]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the crap-score skill. Is slugify, which the branch feature changed
+    against origin/main, risky? The Istanbul coverage report is in
+    coverage/coverage-final.json.
+graders:
+  - name: says-stale
+    type: regex
+    pattern: 'stale|out of date|outdated|older than|predates|rebuild|re-run|rerun|regenerat'
+    flags: i
+    target: last_message
+  - name: no-stale-score
+    type: regex
+    pattern: '\b8\.1\b'
+    match: not_contains
+    target: last_message
+  - name: no-verdict-from-stale-data
+    type: llm
+    criteria: >
+      PASS if the reply states that slugify cannot be scored until the
+      coverage report is rebuilt for the current code, and gives no CRAP
+      score or risk verdict for slugify taken from the existing report.
+      FAIL if it gives a CRAP score or a pass/fail verdict for slugify based
+      on coverage/coverage-final.json, even with a caveat.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

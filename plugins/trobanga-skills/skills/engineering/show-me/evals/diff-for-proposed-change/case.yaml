@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: diff-for-proposed-change
+description: >
+  The user and agent agreed a refactor; the question is what changes.
+  Targets the default failure of describing the change in prose, or of
+  showing only the final layout, instead of a diff-shaped view (file tree
+  or call tree) whose + and - lines mark exactly what moves. The skill sets
+  disable-model-invocation, so prepare it with evaluate-skill before
+  running. Read-only; needs no grants.
+tags: [diff]
+context:
+  add_dirs: [syncer]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the show-me skill. The code is in the `syncer` folder, one of your
+    additional working directories. We agreed to turn transport.py into a
+    transport/ package with client.py (today's fetch_page) and retry.py,
+    and to move the retry loop out of Syncer._fetch_with_retry into
+    transport/retry.py. Show me what changes.
+graders:
+  - name: diff-block
+    type: regex
+    pattern: '```diff'
+  - name: adds-retry-module
+    type: regex
+    pattern: '^\+.*retry(\.py)?'
+    flags: m
+  - name: removes-old-shape
+    type: regex
+    pattern: '^-.*(transport\.py|_fetch_with_retry)'
+    flags: m
+  - name: focused
+    type: llm
+    criteria: >
+      PASS if the views show only the files and calls the change touches
+      (transport, retry, sync and their callers), without listing unrelated
+      modules such as config.py or store.py in detail, and the prose is a
+      few sentences at most. FAIL otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

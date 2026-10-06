@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: multi-context-placement
+description: >
+  A repo with a CONTEXT-MAP.md and one GLOSSARY.md per context. Targets the
+  default failure of writing the new term into a new root GLOSSARY.md (or
+  into the wrong context) instead of the Billing context's glossary named
+  by the map, and of keeping "invoice line" as a synonym although the
+  Billing glossary already gives Invoice another meaning. Run with
+  --scaffold --allow-tools Write Edit.
+tags: [glossary, contexts]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the domain-modeling skill. You may edit files without asking.
+
+    In billing we say "charge", "fee" and "invoice line" for the amount a
+    Member owes for one Loan returned late: 2 EUR per day late. Let's call
+    it a Late Fee.
+graders:
+  - name: term-in-billing-glossary
+    type: regex
+    target: {source: file, path: src/billing/GLOSSARY.md}
+    pattern: '\*\*Late Fee\*\*'
+  - name: avoid-list-in-billing
+    type: regex
+    target: {source: file, path: src/billing/GLOSSARY.md}
+    pattern: '_Avoid_:[^\n]*(charge|invoice line)'
+    flags: i
+  - name: no-root-glossary
+    type: file_exists
+    path: GLOSSARY.md
+    exists: false
+  - name: lending-glossary-untouched
+    type: regex
+    target: {source: file, path: src/lending/GLOSSARY.md}
+    pattern: 'Late Fee'
+    match: not_contains
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

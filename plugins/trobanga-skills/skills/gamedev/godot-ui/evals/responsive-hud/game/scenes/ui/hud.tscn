@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://b7q3hudfixture"]
+
+[ext_resource type="Texture2D" path="res://ui/heart.png" id="1_heart"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+offset_right = 1920.0
+offset_bottom = 1080.0
+mouse_filter = 2
+
+[node name="Heart" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 72.0
+offset_bottom = 68.0
+texture = ExtResource("1_heart")
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 30.0
+offset_right = 384.0
+offset_bottom = 58.0
+value = 100.0
+
+[node name="Score" type="Label" parent="."]
+layout_mode = 0
+offset_left = 1700.0
+offset_top = 24.0
+offset_right = 1896.0
+offset_bottom = 60.0
+text = "Score: 0"
+horizontal_alignment = 2
+
+[node name="PauseButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1800.0
+offset_top = 1000.0
+offset_right = 1896.0
+offset_bottom = 1056.0
+text = "Pause"

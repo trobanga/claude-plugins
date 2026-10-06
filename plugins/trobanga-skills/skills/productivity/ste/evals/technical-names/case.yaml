@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: technical-names
+description: >
+  An error log whose identifiers and message contain words STE forbids in
+  prose (performMigration, "commence"). STE keeps Technical Names exactly and
+  simplifies only the prose around them. Hypothesis: a default agent echoes
+  the unapproved words in its own prose ("the migration failed to commence");
+  an over-eager STE answer instead rewrites the identifier or the quoted
+  message. The graders check both sides. ste is user-invoked: run it on a
+  copy made by evaluate-skill's `skill_eval.py prepare`.
+tags: [technical-names]
+execution:
+  max_turns: 6
+  allowed_tools: [Skill]
+  prompt: |
+    Use the ste skill. Then tell me what this error means and what I should
+    do about it:
+
+        2026-10-05T03:12:44Z ERROR MigrationRunner.performMigration(): unable to commence handshake with replica db-2 (timeout=30s)
+graders:
+  - name: identifier-kept
+    type: regex
+    pattern: 'performMigration'
+  - name: message-kept
+    type: regex
+    pattern: 'unable to commence handshake'
+  - name: prose-perform
+    type: regex
+    pattern: '(?<![\w.])perform(s|ed|ing)?\b'
+    flags: i
+    match: not_contains
+  - name: prose-commence
+    type: regex
+    pattern: '\bcommenc(e|es|ed|ing)\b(?! handshake)'
+    flags: i
+    match: not_contains
+  - name: sentence-length
+    type: regex
+    pattern: '(?:[^\s.!?:;]+[ \t]+){25}[^\s.!?:;]+'
+    match: not_contains
+  - name: facts-kept
+    type: llm
+    criteria: >
+      PASS if the answer says that the migration could not start a
+      connection (handshake) with the replica db-2 within the 30-second
+      timeout, and gives at least one concrete check, such as whether db-2
+      is up and reachable from the migration host. FAIL if it gets the
+      replica, the timeout or the cause wrong.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

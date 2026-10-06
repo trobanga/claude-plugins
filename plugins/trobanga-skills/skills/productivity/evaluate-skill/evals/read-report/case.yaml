@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: read-report
+description: >
+  Turn a finished aggregate-result.json (a fixture; nothing is run) into the
+  verdict. The fixture holds a real gain (group-by-label, +0.50), a gain of
+  one grader flip (since-last-tag, +0.06 = 1/18 with six graders and three
+  runs), a zero delta at 1.00 (no-tag-yet) and a +0.17 where the skill fired
+  in only one of three with-arm runs (monorepo-tags). Hypothesis: a default
+  agent reads the raw JSON, reports every positive delta as a win and never
+  checks skill-fired. evaluate-skill is user-invoked: run it on a copy made by
+  its own `skill_eval.py prepare`. Run with --allow-tools 'Bash(python3:*)'.
+tags: [report]
+context:
+  add_dirs: [results]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the evaluate-skill skill. I already ran the evals of my
+    `release-notes` skill on sonnet with 3 runs; the result is
+    `results/full-sonnet/aggregate-result.json` (`results` is one of your
+    additional working directories). Do not start any new runs. What is the
+    verdict?
+graders:
+  - name: ran-report
+    type: tool_used
+    tool: Bash
+    input_match: 'skill_eval\.py[^"]*\breport\b'
+    arm: with-only
+  - name: real-gain
+    type: regex
+    pattern: 'group-by-label[^\n]*\+?0\.5'
+  - name: adds-nothing
+    type: llm
+    criteria: >
+      PASS if the answer names no-tag-yet as a case where the skill adds
+      nothing on sonnet (delta 0, both arms at 1.00). FAIL otherwise.
+  - name: noise
+    type: llm
+    criteria: >
+      PASS if the answer says the +0.06 delta of since-last-tag is within
+      noise (about one grader flipping in one run) and not evidence of a
+      gain, or says more runs are needed before concluding. FAIL if it
+      counts since-last-tag as a gain.
+  - name: fired-check
+    type: llm
+    criteria: >
+      PASS if the answer flags that the skill fired in only one of the
+      three with-arm runs of monorepo-tags, so its +0.17 cannot be credited
+      to the skill without reading the traces. FAIL if it reports the +0.17
+      as a gain without that caveat.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,46 @@
+schema_version: "1.1"
+name: responsive-hud
+description: >
+  A HUD laid out with absolute offsets for 1920x1080, placed under a Node2D
+  whose Camera2D follows the player. At 1280x720 the score and pause button
+  are off-screen, and the HUD drifts with the camera. The prompt rules out
+  the stretch-mode fix. The skill puts a HUD on a CanvasLayer and lays it out
+  with anchors and containers. Hypothesis: a default agent recomputes the
+  offsets for one more resolution, or adds a script that repositions nodes on
+  resize, and keeps the HUD under the Node2D. The graders read the rewritten
+  scene. Run with --allow-tools Write.
+tags: [layout]
+context:
+  add_dirs: [game]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the godot-ui skill. In my Godot 4.3 project (the `game` folder, one
+    of your additional working directories, read-only) the HUD in
+    `scenes/ui/hud.tscn` breaks on a 1280x720 window: the score and the
+    pause button are off-screen, and the whole HUD slides away when the
+    camera follows the player. We keep the window stretch mode `disabled`
+    on purpose, so fix the scene itself. Write the fixed scene to `hud.tscn`
+    in the current directory.
+graders:
+  - name: written
+    type: file_exists
+    path: hud.tscn
+  - name: no-fixed-right-edge
+    type: regex
+    pattern: 'offset_(?:left|right) = 1[5-9]\d\d(?:\.\d+)?\b'
+    match: not_contains
+    target: {source: file, path: hud.tscn}
+  - name: anchored-or-contained
+    type: regex
+    pattern: 'anchors_preset = (?:1|3|10|15)\b|anchor_right = 1(?:\.0)?\b|type="(?:MarginContainer|HBoxContainer)"'
+    target: {source: file, path: hud.tscn}
+  - name: canvas-layer
+    type: regex
+    pattern: 'type="CanvasLayer"'
+    target: {source: file, path: hud.tscn}
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

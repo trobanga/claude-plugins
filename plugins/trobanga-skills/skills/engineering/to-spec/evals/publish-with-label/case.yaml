@@ -1,0 +1,80 @@
+schema_version: "1.1"
+name: publish-with-label
+description: >
+  The conversation is complete and the seam already confirmed. Targets the
+  default failures of writing a free-form PRD to a local file, interviewing
+  the user again, omitting the `ready-for-agent` label, publishing to the
+  wrong repo (the config says `--repo acme/billing`), and putting file paths
+  in the spec. The run cannot reach GitHub, so the prompt asks for the
+  publish command in publish.sh and the body in spec-draft.md. The skill
+  sets disable-model-invocation, so run it through evaluate-skill's prepare
+  step; run with --scaffold --allow-tools Bash Write.
+tags: [publish, template]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Our discussion so far:
+
+    > me: customers forget to pay. I want billing to send reminder emails
+    > for overdue invoices.
+    > you: when should the first one go out?
+    > me: 7 days after the due date, then every 7 days, at most 3 in total.
+    > you: and once they pay?
+    > me: stop immediately. Also a customer can opt out of reminders, but
+    > the invoice itself still counts as overdue.
+    > you: I'd test all of it through InvoiceService, like the existing
+    > tests, with the clock injected. One seam.
+    > me: agreed, that's the seam.
+
+    Use the to-spec skill. This sandbox cannot reach GitHub: write the exact
+    shell command that would publish the spec to `publish.sh`, and the issue
+    body to `spec-draft.md`, instead of running it.
+graders:
+  - name: publish-command
+    type: regex
+    pattern: 'gh\s+issue\s+create'
+    target: {source: file, path: publish.sh}
+  - name: triage-label
+    type: regex
+    pattern: '--label[ =]["'']?ready-for-agent'
+    target: {source: file, path: publish.sh}
+  - name: repo-from-config
+    type: regex
+    pattern: '--repo[ =]["'']?acme/billing\b'
+    target: {source: file, path: publish.sh}
+  - name: template-sections
+    type: regex
+    pattern: 'Problem Statement[\s\S]*Solution[\s\S]*User Stories[\s\S]*Implementation Decisions[\s\S]*Testing Decisions[\s\S]*Out of Scope'
+    target: {source: file, path: spec-draft.md}
+  - name: user-stories
+    type: regex
+    pattern: '(As an? [^\n]*I want[^\n]*so that[\s\S]*?){5}'
+    flags: i
+    target: {source: file, path: spec-draft.md}
+  - name: no-file-paths
+    type: regex
+    pattern: '\b[\w/]+\.py\b'
+    match: not_contains
+    target: {source: file, path: spec-draft.md}
+  - name: every-requirement
+    type: llm
+    focus: {source: file, path: spec-draft.md}
+    criteria: >
+      PASS if the spec's user stories cover all of: first reminder 7 days
+      after the due date, then every 7 days, at most 3 reminders, stop once
+      the invoice is paid, and customer opt-out while the invoice still
+      counts as overdue. FAIL if any is missing.
+  - name: no-interview
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?to-spec"'
+    arm: with-only

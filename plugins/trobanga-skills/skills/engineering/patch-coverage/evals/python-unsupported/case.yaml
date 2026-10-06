@@ -1,0 +1,41 @@
+schema_version: "1.1"
+name: python-unsupported
+description: >
+  Hypothesis: without the skill an agent improvises a Python pipeline
+  (pytest --cov or coverage run, then diff-cover) and reports a number the
+  user has no reviewed script behind. The skill supports Java, Go, Rust
+  and Elixir only and says to tell the user the project type is not
+  supported and stop. Note: this case grades obedience to that stop rule;
+  whether stopping serves the user better than an improvised measurement
+  is the open question a baseline run should inform. Run with --scaffold
+  --allow-tools Bash.
+tags: [unsupported, early-exit]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the patch-coverage skill. What is the patch coverage of my branch
+    feature against origin/main?
+graders:
+  - name: says-unsupported
+    type: regex
+    pattern: 'not supported|unsupported|does not support|doesn''t support|isn''t supported|only supports'
+    flags: i
+    target: last_message
+  - name: no-coverage-run
+    type: tool_used
+    tool: Bash
+    input_match: 'pytest|coverage run|--cov|python3? -m coverage'
+    min: 0
+    max: 0
+  - name: no-number
+    type: llm
+    criteria: >
+      PASS if the reply gives no patch coverage percentage for the branch.
+      FAIL if it reports any coverage percentage.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

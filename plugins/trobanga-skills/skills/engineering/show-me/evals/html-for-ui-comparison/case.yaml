@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: html-for-ui-comparison
+description: >
+  A visual UI layout comparison, which the skill sends to one focused HTML
+  file outside the repository. Targets the default failures of drawing
+  ASCII mock-ups in chat, of writing the HTML into the repository (the
+  workspace), and of using placeholder labels instead of the real ones.
+  Bash is withheld so the run cannot launch xdg-open on the host; the case
+  grades the written file only. Unverified: whether file_exists also lists
+  files written outside the workspace; check html-outside-repo against one
+  trace on the first run. The skill sets disable-model-invocation,
+  so prepare it with evaluate-skill before running. Run with --allow-tools
+  Write.
+tags: [html]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the show-me skill. We're debating two layouts for the loan
+    dashboard of our tool library app, and I can't picture them:
+
+    A: a table of all Loans (Member, tool, due date, status) with a filter
+       sidebar on the left (status, tool category, branch).
+    B: three columns by status: "Out", "Due soon", "Overdue", each Loan a
+       card showing Member, tool and due date.
+
+    Show me both side by side.
+graders:
+  - name: html-written
+    type: tool_used
+    tool: Write
+    input_match: '\.html'
+  - name: html-outside-repo
+    type: file_exists
+    path: '**/*.html'
+    exists: false
+  - name: real-labels
+    type: tool_used
+    tool: Write
+    input_match: '^(?=.*\.html)(?=.*Due soon)(?=.*Overdue)(?=.*Member)'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

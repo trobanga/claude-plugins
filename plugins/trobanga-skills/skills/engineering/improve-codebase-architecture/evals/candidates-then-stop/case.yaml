@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: candidates-then-stop
+description: >
+  A small shop codebase with a pass-through OrdMgrHelper over three shallow
+  order modules and a glossary that names the concept "Order intake".
+  Targets the default failures of jumping straight to a proposed interface
+  or refactor, of naming the candidate after the class (OrdMgrHelper)
+  instead of the domain term, and of not stopping for the user's pick.
+  Read-only; needs no grants.
+tags: [candidates]
+context:
+  add_dirs: [shop]
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Agent]
+  prompt: |
+    Use the improve-codebase-architecture skill on the codebase in the
+    `shop` folder, one of your additional working directories.
+graders:
+  - name: asks-for-pick
+    type: regex
+    pattern: 'which[^\n]{0,80}(explore|pick|choose|dig)'
+    flags: i
+  - name: no-interface-yet
+    type: llm
+    criteria: >
+      PASS if the final message presents deepening candidates without
+      proposing a concrete interface for any of them: no new function or
+      method signatures, type definitions or code for the deepened module.
+      Naming what would merge and why is fine. FAIL if any candidate comes
+      with a proposed signature, class outline or code sketch of the new
+      interface.
+  - name: order-intake-candidate
+    type: llm
+    criteria: >
+      PASS if one candidate merges the order validator, builder, saver and
+      OrdMgrHelper (or the call sequence in web.py) into one deeper module,
+      and names it with the glossary term "Order intake" rather than only by
+      the class or file names. FAIL otherwise.
+  - name: candidate-fields
+    type: llm
+    criteria: >
+      PASS if every candidate lists the files involved, the problem, the
+      solution in plain words, and the benefits in terms of locality,
+      leverage, or how tests would improve. FAIL if any candidate lacks one
+      of these.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

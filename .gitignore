@@ -14,4 +14,4 @@ __pycache__/
 .DS_Store
 
 # Results of claude plugin eval
-evals/results/
+**/evals/results/

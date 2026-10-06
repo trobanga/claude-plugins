@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: vague-request
+description: >
+  "Teach me Rust" in an empty workspace. The skill's first job without a
+  MISSION.md is to ask why the user wants to learn the topic, and to write
+  nothing until the mission is concrete. Hypothesis: a default agent starts
+  teaching at once, in chat or as a first lesson file, with a generic
+  "Hello, world" curriculum. teach is user-invoked: run it on a copy made by
+  evaluate-skill's `skill_eval.py prepare`. Run with --allow-tools Write, so
+  that writing early is possible.
+tags: [mission]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill, Write]
+  prompt: |
+    Use the teach skill. Teach me Rust.
+graders:
+  - name: no-lesson-yet
+    type: file_exists
+    path: '**/*.html'
+    exists: false
+    arm: both
+  - name: no-mission-guessed
+    type: file_exists
+    path: MISSION.md
+    exists: false
+    arm: both
+  - name: asks-why
+    type: llm
+    criteria: >
+      PASS if the final message asks the user why they want to learn Rust
+      or what concrete thing they want to be able to do with it (a project,
+      a job, a tool to ship). FAIL if it starts teaching Rust content
+      (syntax, ownership, installation steps) instead of asking.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

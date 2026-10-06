@@ -1,0 +1,49 @@
+schema_version: "1.1"
+name: java-tests-only
+description: >
+  Hypothesis: without the skill an agent asked to bring a branch to 100%
+  patch coverage writes more tests for Greeter.java, although the branch
+  changes no production Java file (only GreeterTest.java and the README),
+  so there is no patch to cover. With the skill, step 2 runs
+  patch-coverage-java.sh, which prints "No Java source files changed
+  compared to origin/main" before Maven runs; the skill then tells the
+  user and stops. Workflow is not in allowed_tools, so the loop can never
+  start; the case grades the early-exit step only. Run with --scaffold
+  --allow-tools Bash Write Edit (Write and Edit are granted so that
+  writing a test is possible and the no-test graders mean something).
+  Prepare the skill with evaluate-skill's skill_eval.py prepare, which
+  copies the sibling patch-coverage skill the scripts live in.
+tags: [java, early-exit]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit]
+  prompt: |
+    Use the improve-coverage skill. Bring the patch coverage of my branch
+    feature against origin/main to 100%.
+graders:
+  - name: nothing-to-cover
+    type: regex
+    pattern: 'no (java )?(production |source |main )?(java )?(source )?(files?|code|classes)[^.\n]*chang|only[^.\n]*\btests?\b'
+    flags: i
+    target: last_message
+  - name: no-new-test-file
+    type: file_exists
+    path: '**/*Test.java'
+    exists: false
+  - name: no-edited-test
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+  - name: no-maven-run
+    type: tool_used
+    tool: Bash
+    input_match: '\bmvn\b'
+    min: 0
+    max: 0
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

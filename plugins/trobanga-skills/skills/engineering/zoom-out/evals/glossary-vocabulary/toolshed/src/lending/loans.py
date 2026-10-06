@@ -1,0 +1,3 @@
+def cross_branch_loans(month: str):
+    """Loans in `month` where the lending Branch does not own the tool."""
+    ...

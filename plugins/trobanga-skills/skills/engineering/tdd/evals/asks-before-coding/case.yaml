@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: asks-before-coding
+description: >
+  Targets the default failure of writing tests and code at once on a feature
+  request, without first agreeing the public interface and the behaviours to
+  test (Planning, "Get user approval on the plan"). The scaffold builds a
+  small Python package where writing code is easy, so the temptation is real.
+  Run with --scaffold --allow-tools Write Edit Bash; without the grant the
+  no-write graders pass trivially.
+tags: [planning]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Use the tdd skill. In this project, add a function that turns article
+    titles into URL slugs, so `textkit` can build links for the blog.
+graders:
+  - name: no-write-before-approval
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+  - name: no-edit-before-approval
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: proposes-interface
+    type: llm
+    criteria: >
+      PASS if the final message proposes a concrete public interface for the
+      slug function (a name and signature, for example
+      `textkit.strings.slugify(title: str) -> str`) and asks the user to
+      confirm or change it. FAIL if it proposes no interface, or reports the
+      function as already written.
+  - name: asks-which-behaviours
+    type: llm
+    criteria: >
+      PASS if the final message lists the behaviours it would test as
+      observable input/output behaviour (for example lower-casing, spaces
+      to hyphens, punctuation removed, non-ASCII handling) and asks the user
+      which of them matter or to approve the list before any code is
+      written. FAIL if it lists implementation steps instead of behaviours,
+      or does not ask.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

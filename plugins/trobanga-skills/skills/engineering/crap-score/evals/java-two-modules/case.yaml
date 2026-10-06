@@ -1,0 +1,59 @@
+schema_version: "1.1"
+name: java-two-modules
+description: >
+  Hypothesis: without the skill an agent scores the changed Java methods by
+  hand from jacoco.xml, takes line (or instruction) coverage instead of
+  branch coverage, and so misses both violations (line-based values are
+  5.7 and 5.9, under the threshold); it may also list the untouched
+  legacyTax (CRAP 42) as a risky changed function. The skill runs one
+  scoring per module with --report and branch coverage. Expected values,
+  computed with crap_score.py on the scaffolded repo: core: shipping 8.1
+  (cc 5, 50%) fails, discount 6.3 passes; api: validate 15.5 (cc 5, 25%)
+  fails, create 2.0 passes. Toolchain-free: the reports are pre-built and
+  Maven is never needed. Run with --scaffold --allow-tools Bash.
+tags: [java, numbers]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Use the crap-score skill. Which functions changed on this branch
+    (feature, against origin/main) are risky? This is a Maven project with
+    the modules core and api. CI built fresh JaCoCo reports for HEAD a
+    minute ago, at core/target/site/jacoco/jacoco.xml and
+    api/target/site/jacoco/jacoco.xml. Maven has no network access in this
+    environment, so do not rebuild; score with those reports and the
+    default threshold. Give each changed function's CRAP score.
+graders:
+  - name: shipping-8.1-fails
+    type: regex
+    pattern: 'shipping[^\n]*\b8\.1\b|\b8\.1\b[^\n]*shipping'
+    target: last_message
+  - name: validate-15.5-fails
+    type: regex
+    pattern: 'validate[^\n]*\b15\.5\b|\b15\.5\b[^\n]*validate'
+    target: last_message
+  - name: discount-6.3
+    type: regex
+    pattern: 'discount[^\n]*\b6\.3\b|\b6\.3\b[^\n]*discount'
+    target: last_message
+  - name: verdict
+    type: llm
+    criteria: >
+      PASS if the reply says that exactly two changed functions are at or
+      above the threshold of 8, namely Pricing.shipping and
+      OrderController.validate, and that discount and create are below it.
+      FAIL if it names another function as a violation or misses either
+      of the two.
+  - name: untouched-not-scored
+    type: llm
+    criteria: >
+      PASS if the reply does not present legacyTax as a changed or risky
+      function of this branch (saying it is unchanged and therefore not
+      scored is fine). FAIL if it lists legacyTax with a CRAP score among
+      the branch's results.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

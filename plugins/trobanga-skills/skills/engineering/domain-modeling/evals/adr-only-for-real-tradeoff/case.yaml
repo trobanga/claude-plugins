@@ -1,0 +1,48 @@
+schema_version: "1.1"
+name: adr-only-for-real-tradeoff
+description: >
+  Three decisions arrive together; only one is hard to reverse, surprising
+  without context, and the result of a real trade-off. Targets the default
+  failure of recording every decision as an ADR (or none), instead of
+  exactly one ADR, numbered 0001, for the event-only integration. Run with
+  --allow-tools Write Edit.
+tags: [adr]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the domain-modeling skill. You may write files without asking.
+    Record what deserves recording from today's design meeting:
+
+    1. The CLI logs through Python's `logging` module instead of `print`.
+    2. The flag that previews changes without applying them is named
+       `--dry-run`.
+    3. Lending and Billing talk to each other only through domain events
+       (Lending publishes LoanClosed, Billing consumes it). We considered a
+       direct HTTP call from Lending to Billing and a shared database, but
+       Billing runs in a separate PCI-scoped network zone that accepts no
+       inbound connections, and a shared database would pull Lending into
+       PCI scope.
+graders:
+  - name: adr-for-integration
+    type: file_exists
+    path: docs/adr/0001-*.md
+  - name: only-one-adr
+    type: file_exists
+    path: docs/adr/0002-*.md
+    exists: false
+  - name: no-adr-for-logging-or-flag
+    type: tool_used
+    tool: Write
+    input_match: 'docs/adr/.*(logging|dry-run)'
+    min: 0
+    max: 0
+    arm: both
+  - name: adr-records-why
+    type: tool_used
+    tool: Write
+    input_match: 'docs/adr/0001-(?=.*([Ee]vent|LoanClosed))(?=.*PCI)(?=.*([Ii]nbound|[Ss]hared database))'
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

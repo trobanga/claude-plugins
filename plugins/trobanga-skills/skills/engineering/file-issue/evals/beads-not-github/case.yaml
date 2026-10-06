@@ -1,0 +1,58 @@
+schema_version: "1.1"
+name: beads-not-github
+description: >
+  The remote and .github/ issue templates point at GitHub; the project
+  config says issues live in beads (prefix wid). Targets the default failure
+  of filing with `gh issue create` because the code is on GitHub, and of
+  showing a draft for approval first. The run cannot reach any tracker, so
+  the prompt asks for the filing command in file-issue.sh instead of running
+  it; the graders read that file. Run with --scaffold --allow-tools Bash Write.
+tags: [resolve, file]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    We just found this while pairing:
+
+    > me: the CSV export silently drops every row that has a comma in any
+    > cell. A customer exported 1,200 orders and got 1,031.
+    > you: it's `export_rows` in src/export.py: it skips such rows instead
+    > of letting the csv writer quote them. Quoting is what the csv module
+    > does by default, so the skip is just wrong.
+    > me: and nobody notices because there's no warning. Finance reconciles
+    > against these files.
+
+    Use the file-issue skill to file an issue for it. This sandbox cannot
+    reach the tracker: do everything up to the filing command, then write
+    that exact shell command, with the full issue text, to `file-issue.sh`
+    instead of running it.
+graders:
+  - name: command-written
+    type: file_exists
+    path: file-issue.sh
+  - name: files-in-beads
+    type: regex
+    pattern: '\bbd\s+(create|new|q)\b'
+    target: {source: file, path: file-issue.sh}
+  - name: not-github-issues
+    type: regex
+    pattern: 'gh\s+issue\s+create'
+    match: not_contains
+    target: {source: file, path: file-issue.sh}
+  - name: done-when-checklist
+    type: regex
+    pattern: '## Done when[\s\S]*- \[ \]'
+    target: {source: file, path: file-issue.sh}
+  - name: no-approval-question
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?file-issue"'
+    arm: with-only

@@ -1,0 +1,52 @@
+schema_version: "1.1"
+name: instructions
+description: >
+  A procedure question for non-native operators. Hypothesis: a default agent
+  answers in ordinary technical English: sentences over 25 words, "ensure",
+  "perform", "prior to", future tense ("nginx will reload") and passive
+  instructions. The regex graders check the STE limits the skill sets on the
+  answer text. ste is user-invoked: run it on a copy made by evaluate-skill's
+  `skill_eval.py prepare`.
+tags: [register]
+execution:
+  max_turns: 6
+  allowed_tools: [Skill]
+  prompt: |
+    Use the ste skill. Then explain to our new operators, who read English
+    as a second language, how to replace the expiring TLS certificate on our
+    nginx reverse proxy without downtime. The new certificate and key are
+    already in /etc/ssl/new/.
+graders:
+  - name: sentence-length
+    type: regex
+    # 26 or more words on one line without a sentence end.
+    pattern: '(?:[^\s.!?:;]+[ \t]+){25}[^\s.!?:;]+'
+    match: not_contains
+  - name: unapproved-words
+    type: regex
+    pattern: '\b(utili[sz]e[sd]?|commenc\w*|perform(s|ed|ing)?|prior to|in order to|ensure[sd]?|subsequently|facilitate[sd]?)\b'
+    flags: i
+    match: not_contains
+  - name: present-tense
+    type: regex
+    pattern: '\b(will|would|shall)\b'
+    flags: i
+    match: not_contains
+  - name: commands
+    type: llm
+    criteria: >
+      PASS if every step the operator must do is written as a command in
+      the active voice ("Copy the file", "Run nginx -t"), and no step is
+      written in the passive voice ("The file should be copied", "nginx is
+      reloaded"). FAIL otherwise.
+  - name: facts-kept
+    type: llm
+    criteria: >
+      PASS if the answer tells the operator to test the configuration
+      (for example `nginx -t`) before a graceful reload (for example
+      `nginx -s reload` or `systemctl reload nginx`), and not a restart.
+      FAIL if it omits the test or uses a restart.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

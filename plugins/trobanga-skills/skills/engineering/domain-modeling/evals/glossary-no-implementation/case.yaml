@@ -1,0 +1,55 @@
+schema_version: "1.1"
+name: glossary-no-implementation
+description: >
+  The user settles two terms but mixes in storage details (tables, UUIDs,
+  enums, column names). Targets the default failures of copying those
+  implementation details into GLOSSARY.md, of not recording the rejected
+  synonyms, and of creating an ADR or other files that nothing calls for.
+  The workspace starts empty, so GLOSSARY.md must be created. Run with
+  --allow-tools Write Edit.
+tags: [glossary]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the domain-modeling skill. You may write files without asking.
+
+    We run a tool library. People here say "user", "account" and "member"
+    for the same thing: someone who pays a monthly fee and may borrow tools.
+    Let's settle on Member. A Member is stored in the `members` table with a
+    UUID primary key and a `status` enum (active, lapsed).
+
+    When a Member borrows a tool, we've called it a checkout, a rental, or a
+    loan. Let's call it a Loan. Loans are rows in `loans` with a `due_at`
+    timestamp, set seven days after the borrow.
+graders:
+  - name: glossary-created
+    type: file_exists
+    path: GLOSSARY.md
+  - name: member-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*Member\*\*'
+  - name: member-avoid-list
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '_Avoid_:[^\n]*(User|Account)[^\n]*'
+    flags: i
+  - name: loan-term
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '\*\*Loan\*\*'
+  - name: no-implementation-details
+    type: regex
+    target: {source: file, path: GLOSSARY.md}
+    pattern: '(members|loans) table|`(members|loans)`|uuid|primary key|enum|due_at|timestamp|\brows?\b'
+    flags: i
+    match: not_contains
+  - name: no-adr
+    type: file_exists
+    path: docs/adr/**
+    exists: false
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

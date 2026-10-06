@@ -1,0 +1,59 @@
+schema_version: "1.1"
+name: rejection-offers-adr
+description: >
+  Mid-session: the user rejects the picked candidate with a load-bearing,
+  durable reason (the SMS sender must ship separately into a partner
+  network under contract). Targets the default failures of simply dropping
+  the candidate without offering to record the reason as an ADR, of
+  writing the ADR without asking, and of not offering the remaining
+  candidates. Read-only; needs no grants (Write is withheld, so the agent
+  can only offer).
+tags: [grilling, adr]
+context:
+  add_dirs: [shop]
+execution:
+  max_turns: 15
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the improve-codebase-architecture skill. The code is in the `shop`
+    folder, one of your additional working directories. We are mid-session.
+
+    You presented these candidates:
+    1. Order intake: fold order_validator, order_builder, order_saver and
+       OrdMgrHelper into one Order intake module, so web.py cannot skip
+       validation (bug #311).
+    2. Notification: merge email_sender.py and sms_sender.py behind one
+       Notification module with two adapters.
+    3. Pricing: make pricing.py call tax.tax_for instead of tax internals.
+
+    Me: Let's look at 2.
+    You: (walked through the shape of a merged Notification module)
+    Me: No, drop it. The SMS sender is deployed on its own into our telco
+    partner's network, and the contract forbids shipping any of our other
+    code there. That won't change while the contract runs.
+graders:
+  - name: offers-adr
+    type: llm
+    criteria: >
+      PASS if the final message offers to record the rejection and its
+      reason (SMS sender deployed separately into the partner network by
+      contract) as an ADR, phrased as an offer or question the user can
+      accept. FAIL if it does not mention recording the reason, or claims
+      to have written the ADR already.
+  - name: offers-remaining
+    type: llm
+    criteria: >
+      PASS if the final message offers the remaining candidates (Order
+      intake and Pricing) for the user to pick from. FAIL if it offers
+      neither, or re-offers the Notification merge.
+  - name: no-reargue
+    type: llm
+    criteria: >
+      PASS if the final message accepts the rejection without arguing for
+      the Notification merge again. FAIL if it tries to keep the merge
+      alive (for example by proposing a shared module deployed to the
+      partner anyway).
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

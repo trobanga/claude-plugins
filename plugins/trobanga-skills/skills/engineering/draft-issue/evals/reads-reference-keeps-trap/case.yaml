@@ -1,0 +1,48 @@
+schema_version: "1.1"
+name: reads-reference-keeps-trap
+description: >
+  The prompt only points at an incident note; the facts the implementer
+  needs (409 means already charged; reuse the idempotency key; keep
+  retrying 5xx) are in the file. Targets the default failures of drafting
+  from the prompt alone, of dropping one of the two traps, of filling the
+  lede with code identifiers from the note, and of carrying the note's
+  out-of-scope alerting question into the issue. Read-only; needs no
+  grants.
+tags: [reference]
+context:
+  add_dirs: [incident-notes]
+execution:
+  max_turns: 10
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    Use the draft-issue skill. Draft the issue for the double-charge bug.
+    Everything we know is in `2026-09-30-double-charge.md` in the
+    `incident-notes` folder, one of your additional working directories.
+graders:
+  - name: read-reference
+    type: tool_used
+    tool: Read
+    input_match: 'double-charge'
+  - name: trap-409
+    type: regex
+    pattern: '409'
+  - name: trap-idempotency-key
+    type: regex
+    pattern: 'idempoten'
+    flags: i
+  - name: out-of-scope-dropped
+    type: regex
+    pattern: 'on-call|alert'
+    flags: i
+    match: not_contains
+  - name: plain-lede
+    type: llm
+    criteria: >
+      PASS if the paragraph right after the headline has at most three
+      sentences, says that Members were charged twice for one late fee, and
+      contains no code identifiers, file paths or HTTP status codes. FAIL
+      otherwise.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

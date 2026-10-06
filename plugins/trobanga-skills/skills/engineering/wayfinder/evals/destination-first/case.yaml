@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: destination-first
+description: >
+  A loose, large idea (replace Stripe Billing with an in-house ledger,
+  multi-currency later). Targets the default failures of charging at the
+  destination: writing a full plan or a ticket list, or firing a page of
+  questions at once. The skill (Chart, step 1) must first name the
+  destination through a grilling session, one question at a time, and
+  create no map or tickets yet. The skill sets disable-model-invocation, so
+  run it through evaluate-skill's prepare step; run with --scaffold
+  --allow-tools Bash Write.
+tags: [chart, grilling]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Use the wayfinder skill. Idea: we should stop depending on Stripe
+    Billing and run subscriptions on our own ledger, and probably support
+    multiple currencies at some point. It's big and I haven't thought it
+    through.
+
+    This sandbox cannot reach GitHub: if you would create any issue, write
+    its title, labels and body to a file under `wayfinder-out/` instead.
+graders:
+  - name: one-destination-question
+    type: llm
+    criteria: >
+      PASS if the final message (or a question the agent asked) asks the
+      user exactly one question, and that question is about the destination
+      of the effort: what reaching the end looks like (a spec, a decision,
+      a migration), or its scope. FAIL if it asks several questions at
+      once, or presents a plan, a map or a ticket list.
+  - name: no-map-yet
+    type: file_exists
+    path: wayfinder-out/*
+    exists: false
+  - name: no-issue-commands
+    type: tool_used
+    tool: Bash
+    input_match: 'gh\s+(issue|api)'
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?wayfinder"'
+    arm: with-only

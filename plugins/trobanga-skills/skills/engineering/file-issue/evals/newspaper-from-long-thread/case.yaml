@@ -1,0 +1,80 @@
+schema_version: "1.1"
+name: newspaper-from-long-thread
+description: >
+  A long, meandering thread with history, a tangent and one real decision.
+  Targets the default failure of an issue that opens with background,
+  retells the thread, prescribes an implementation plan and runs to several
+  hundred words. The issue must follow draft-issue's template: a verb-phrase
+  headline, a plain-language lede with no code identifiers, Details, Done
+  when, under about 150 words, and filed with `--repo acme/shop` from the
+  project config. The run cannot reach GitHub, so the prompt asks for the
+  filing command in file-issue.sh. Run with --scaffold --allow-tools Bash Write.
+tags: [format, file]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Here is the thread from this morning:
+
+    > ana: background first: the cart was written in 2019 by a contractor,
+    > back when we only sold in USD. We moved to Decimal in 2021 but only
+    > for invoices.
+    > ben: anyway: customers see cart totals one cent off. Three units at
+    > 19.99 show 59.96 in the cart, the invoice says 59.97.
+    > ana: `line_total` in shop/cart.py multiplies a float before it turns
+    > it into a Decimal, so the error is baked in.
+    > ben: tangent, but should we also redo the cart UI? It looks dated.
+    > ana: separate thing, not now.
+    > ben: support gets about 40 tickets a week about this and refunds the
+    > cent by hand.
+    > ana: decision: prices must be Decimal end to end; we round half-up
+    > once, on the line total, which is what the invoice already does.
+
+    Use the file-issue skill to file an issue for the rounding bug. This
+    sandbox cannot reach GitHub: do everything up to the filing command,
+    then write that exact shell command, with the full issue text, to
+    `file-issue.sh` instead of running it.
+graders:
+  - name: command-written
+    type: file_exists
+    path: file-issue.sh
+  - name: repo-flag-from-config
+    type: regex
+    pattern: 'gh\s+issue\s+create[\s\S]*--repo[ =]["'']?acme/shop\b'
+    target: {source: file, path: file-issue.sh}
+  - name: template-sections
+    type: regex
+    pattern: '## Details[\s\S]*## Done when[\s\S]*- \[ \]'
+    target: {source: file, path: file-issue.sh}
+  - name: lede-first-plain
+    type: llm
+    focus: {source: file, path: file-issue.sh}
+    criteria: >
+      PASS if the issue text opens with a short headline that says what
+      changes, followed by a lede of at most three sentences that says what
+      is wrong (cart totals one cent off the invoice) and why it matters, in
+      plain language with no code identifiers or file paths, and no history
+      of the cart (2019, contractor, the 2021 move). FAIL if it opens with
+      background, or the lede names `line_total`, `cart.py` or Decimal.
+  - name: short-no-plan-no-tangent
+    type: llm
+    focus: {source: file, path: file-issue.sh}
+    criteria: >
+      PASS if the issue text (title and body, excluding the shell command
+      syntax) is at most about 180 words, carries the decision (Decimal end
+      to end, round half-up once on the line total), gives no step-by-step
+      implementation plan, and does not mention the cart UI redesign. FAIL
+      if any of these does not hold.
+  - name: no-approval-question
+    type: tool_used
+    tool: AskUserQuestion
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?file-issue"'
+    arm: with-only

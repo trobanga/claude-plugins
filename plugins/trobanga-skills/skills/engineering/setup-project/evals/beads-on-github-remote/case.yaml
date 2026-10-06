@@ -1,0 +1,57 @@
+schema_version: "1.1"
+name: beads-on-github-remote
+description: >
+  The remote and .github/ issue templates point at GitHub, but .beads/
+  (prefix `wid`) and the `wid-12--...` branches show the work is tracked in
+  beads. Targets the default failure of reading the tracker off the remote
+  host (GitHub Issues), of writing the config into CLAUDE.md or a file of its
+  own naming, and of pasting adapter commands into the config. The skill
+  must write .agents/issue-tracker.md with tracker beads, forge GitHub and
+  `{id}--{slug}`, as prose without bd commands. The prompt pre-answers the
+  questions the skill would ask, since a run cannot answer them. Run with
+  --scaffold --allow-tools Bash Write.
+tags: [detect, write]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, AskUserQuestion]
+  prompt: |
+    Use the setup-project skill to configure this repo. I am not available to
+    answer questions, so here are my answers up front: whatever tracker the
+    repo evidence points to is correct, and use the shared, tracked file.
+graders:
+  - name: shared-file-written
+    type: file_exists
+    path: .agents/issue-tracker.md
+  - name: tracker-beads
+    type: regex
+    pattern: 'beads'
+    flags: i
+    target: {source: file, path: .agents/issue-tracker.md}
+  - name: beads-prefix
+    type: regex
+    pattern: '\bwid\b'
+    target: {source: file, path: .agents/issue-tracker.md}
+  - name: forge-github
+    type: regex
+    pattern: 'acme/widget'
+    target: {source: file, path: .agents/issue-tracker.md}
+  - name: double-separator-format
+    type: regex
+    pattern: '\{id\}--\{slug\}'
+    target: {source: file, path: .agents/issue-tracker.md}
+  - name: no-adapter-commands-copied
+    type: regex
+    pattern: '\bbd (show|assign|update|close|create)\b|\bgh (issue|pr) '
+    match: not_contains
+    target: {source: file, path: .agents/issue-tracker.md}
+  - name: no-claude-md
+    type: file_exists
+    path: CLAUDE.md
+    exists: false
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?setup-project"'
+    arm: with-only
