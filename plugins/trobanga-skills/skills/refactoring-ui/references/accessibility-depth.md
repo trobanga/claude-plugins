@@ -117,21 +117,21 @@ Users must be able to perceive content.
 
 | Content Type | Minimum Ratio | Tool |
 |--------------|---------------|------|
-| Normal text (<18px) | 4.5:1 | WebAIM Contrast Checker |
-| Large text (≥18px or ≥14px bold) | 3:1 | |
+| Normal text | 4.5:1 | WebAIM Contrast Checker |
+| Large text (≥18pt = 24px, or ≥14pt ≈ 18.66px bold) | 3:1 | |
 | UI components & graphics | 3:1 | |
 
 **Common contrast fixes:**
 
 ```css
 /* Too light - fails */
-.text-light { color: #9ca3af; } /* gray-400: 3.1:1 on white */
+.text-light { color: #9ca3af; } /* gray-400: 2.54:1 on white */
 
 /* Passes AA */
-.text-muted { color: #6b7280; } /* gray-500: 4.6:1 on white */
+.text-muted { color: #6b7280; } /* gray-500: 4.83:1 on white */
 
 /* Passes AAA */
-.text-strong { color: #374151; } /* gray-700: 9.1:1 on white */
+.text-strong { color: #374151; } /* gray-700: 10.31:1 on white */
 ```
 
 **Don't rely on color alone:**
@@ -507,7 +507,7 @@ Automated tools miss ~70% of issues. Manual testing needed for:
 | Issue | Fix |
 |-------|-----|
 | Missing alt text | Add descriptive alt or `alt=""` for decorative |
-| Low contrast | Use gray-600+ for text on white |
+| Low contrast | Use gray-500 or darker for text on white |
 | Missing focus style | Add `focus-visible` ring/outline |
 | Click-only interaction | Add keyboard handler + focusability |
 | Missing form labels | Add `<label>` with `for` attribute |

@@ -7,26 +7,9 @@ description: Find deepening opportunities in a codebase, informed by the domain 
 
 Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.
 
-## Glossary
+## Vocabulary
 
-Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component," "service," "API," or "boundary." Full definitions in [LANGUAGE.md](LANGUAGE.md).
-
-- **Module** — anything with an interface and an implementation (function, class, package, slice).
-- **Interface** — everything a caller must know to use the module: types, invariants, error modes, ordering, config. Not just the type signature.
-- **Implementation** — the code inside.
-- **Depth** — leverage at the interface: a lot of behaviour behind a small interface. **Deep** = high leverage. **Shallow** = interface nearly as complex as the implementation.
-- **Seam** — where an interface lives; a place behaviour can be altered without editing in place. (Use this, not "boundary.")
-- **Adapter** — a concrete thing satisfying an interface at a seam.
-- **Leverage** — what callers get from depth.
-- **Locality** — what maintainers get from depth: change, bugs, knowledge concentrated in one place.
-
-Key principles (see [LANGUAGE.md](LANGUAGE.md) for the full list):
-
-- **Deletion test**: imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
-- **The interface is the test surface.**
-- **One adapter = hypothetical seam. Two adapters = real seam.**
-
-This skill is _informed_ by the project's domain model. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate.
+Read [LANGUAGE.md](LANGUAGE.md) before step 1 and use its terms exactly in every suggestion. The project's domain language names good seams; its ADRs record decisions not to re-litigate.
 
 ## Process
 
@@ -44,6 +27,8 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't
 
 Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
 
+Done when every module you suspect is shallow has a deletion-test verdict.
+
 ### 2. Present candidates
 
 Present a numbered list of deepening opportunities. For each candidate:
@@ -59,13 +44,23 @@ Present a numbered list of deepening opportunities. For each candidate:
 
 Do NOT propose interfaces yet. Ask the user: "Which of these would you like to explore?"
 
+Done when the user has picked a candidate.
+
 ### 3. Grilling loop
 
 Once the user picks a candidate, drop into a grilling conversation. Walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
 
-Side effects happen inline as decisions crystallize:
+When classifying the candidate's dependencies or planning its tests, read [DEEPENING.md](DEEPENING.md). When the user wants to explore alternative interfaces for the deepened module, follow [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
 
-- **Naming a deepened module after a concept not in `GLOSSARY.md`?** Add the term to `GLOSSARY.md` — same discipline as `/grill-with-docs` (see [GLOSSARY-FORMAT.md](../grill-with-docs/GLOSSARY-FORMAT.md)). Create the file lazily if it doesn't exist.
-- **Sharpening a fuzzy term during the conversation?** Update `GLOSSARY.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR-FORMAT.md](../grill-with-docs/ADR-FORMAT.md).
-- **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+Invoke `Skill(trobanga-skills:domain-modeling)`, which owns `GLOSSARY.md` and the ADRs, the moment one of these happens:
+
+- **The deepened module is named after a concept not in `GLOSSARY.md`, or a fuzzy term gets sharpened** — record the term.
+- **The user rejects the candidate with a load-bearing reason** — offer an ADR: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Offer it only when a future explorer would need the reason to avoid re-suggesting the candidate; skip ephemeral reasons ("not worth it right now") and self-evident ones. Then offer the remaining candidates from step 2.
+
+Done when the user has agreed an interface for the deepened module.
+
+### 4. Hand off
+
+Summarise the agreed interface, its seam and adapters, and the `GLOSSARY.md` and ADR entries written in step 3. Offer `/to-spec` to turn it into a spec or `/to-tickets` to break it into tickets.
+
+Done when the chosen candidate has an agreed interface, every `GLOSSARY.md` and ADR update from step 3 is written, and the offer is made.

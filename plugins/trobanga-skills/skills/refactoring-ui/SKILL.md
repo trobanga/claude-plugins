@@ -1,6 +1,6 @@
 ---
 name: refactoring-ui
-description: 'Audit and fix visual hierarchy, spacing, color, and depth in web UIs. Use when the user mentions "my UI looks off" (or amateur/unprofessional), "fix the design", "Tailwind styling", "color palette", "visual hierarchy", "design system", "spacing scale", or "component styling". Also trigger when building consistent design tokens, creating dark mode themes, improving data-visualization clarity, or polishing UI details before launch. Covers grayscale-first workflow, constrained design scales, shadows, and component styling. For typeface selection, see web-typography. For usability audits, see ux-heuristics.'
+description: 'Audit and fix visual hierarchy, spacing, color, and depth in web UIs. Use when the user mentions "my UI looks off" (or amateur/unprofessional), "fix the design", "Tailwind styling", "color palette", "visual hierarchy", "design system", "spacing scale", or "component styling". Also trigger when building consistent design tokens, creating dark mode themes, improving data-visualization clarity, or polishing UI details before launch. Covers grayscale-first workflow, constrained design scales, shadows, and component styling.'
 license: MIT
 metadata:
   author: wondelai
@@ -112,7 +112,7 @@ See [references/advanced-patterns.md](references/advanced-patterns.md) when desi
 - Each color needs 5-9 shades from near-white to near-black (50-900); darkest is not pure black — use `#111827`, not `#000000`
 - Pure grays look lifeless — tint them (cool UI: blue like `#64748b`; warm UI: yellow/brown like `#78716c`)
 - HSL: lighter = raise lightness, lower saturation, hue toward 60°; darker = the reverse, hue toward 0°/240°
-- Contrast minimums: 4.5:1 body text, 3:1 large text (18px+); use `#374151` (gray-700) on white, not lighter grays
+- Text contrast: on white, the lightest text is gray-500 (`#6b7280`, 4.83:1), since WCAG AA needs 4.5:1 for body text. gray-400 (`#9ca3af`, 2.54:1) fails; keep it for disabled states
 
 **Product applications:**
 
@@ -120,10 +120,10 @@ See [references/advanced-patterns.md](references/advanced-patterns.md) when desi
 |---------|---------------|---------|
 | **Primary palette** | 9 shades (50-900) of brand color | Blue-500 buttons, Blue-100 backgrounds |
 | **Semantic colors** | Success/warning/error with shade ranges | Green-500 success, Red-500 errors |
-| **Text colors** | Three levels: dark, medium, light | `text-gray-900`, `text-gray-600`, `text-gray-400` |
+| **Text colors** | Three levels: dark, medium, light | `text-gray-900`, `text-gray-600`, `text-gray-500` |
 
 **CSS patterns:**
-- `text-gray-900`(dark) `text-gray-600`(medium) `text-gray-400`(light)
+- `text-gray-900`(dark) `text-gray-600`(medium) `text-gray-500`(light)
 - `bg-blue-50` for subtle backgrounds, `bg-blue-500` for primary actions
 - `border-gray-200` for subtle borders, `border-gray-300` for stronger
 
@@ -234,18 +234,11 @@ Audit any UI design:
 | Are labels de-emphasized vs. values? | Labels competing with data | Smaller, lighter, or uppercase-small labels |
 | Does spacing follow a consistent scale? | Arbitrary spacing = visual noise | Use 4/8/16/24/32/48/64 only |
 | Is text width constrained? | Long lines fatigue readers | Apply `max-w-prose` (~65ch) |
-| Do colors have sufficient contrast? | Accessibility failure | WCAG-check; use gray-700+ on white |
+| Do colors have sufficient contrast? | Accessibility failure | Text gray-500 or darker on white (see Color) |
 | Are shadows appropriate for elevation? | Elements float at wrong level | Match shadow scale to element purpose |
 
 ## Further Reading
 
 For the complete system with visual before/after examples:
 
-- [*"Refactoring UI"*](https://www.amazon.com/Refactoring-UI-Adam-Wathan/dp/B0BLJ7MC21?tag=wondelai00-20) by Adam Wathan & Steve Schoger (the full book with hundreds of visual examples)
-- [*"The Design of Everyday Things"*](https://www.amazon.com/Design-Everyday-Things-Revised-Expanded/dp/0465050654?tag=wondelai00-20) by Don Norman (foundational design thinking and usability)
-- [*"Don't Make Me Think"*](https://www.amazon.com/Dont-Make-Think-Revisited-Usability/dp/0321965515?tag=wondelai00-20) by Steve Krug (web usability principles that complement Refactoring UI)
 - [Refactoring UI](https://www.refactoringui.com/) — Official site with resources and examples
-
-## About the Authors
-
-**Adam Wathan**, creator of Tailwind CSS, and **Steve Schoger**, the visual designer behind its design language, wrote *Refactoring UI* to teach developers systematic, repeatable design techniques. Their approach replaces artistic talent with constrained systems — fixed scales for spacing, typography, color, and shadows — that produce professional results.

@@ -1,13 +1,6 @@
 ---
 name: godot-ui
 description: Expert knowledge of Godot's UI system including Control nodes, themes, styling, responsive layouts, and common UI patterns for menus, HUDs, inventories, and dialogue systems. Use when working with Godot UI/menu creation or styling.
-allowed_tools:
-  - mcp__godot__*
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
 ---
 
 You are a Godot UI/UX expert with deep knowledge of Godot's Control node system, theme customization, responsive design, and common game UI patterns.
@@ -260,6 +253,30 @@ CanvasLayer (layer = 100)
                 ├── Button (Settings)
                 ├── Button (Main Menu)
                 └── Button (Quit)
+```
+
+Pausing the tree stops every node in the default `PROCESS_MODE_INHERIT`, the menu included. Give the menu `PROCESS_MODE_ALWAYS`, so it opens the pause and still takes input to end it:
+
+```gdscript
+extends CanvasLayer
+
+@onready var resume_button: Button = %Resume
+
+func _ready() -> void:
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    hide()
+    resume_button.pressed.connect(set_paused.bind(false))
+
+func _unhandled_input(event: InputEvent) -> void:
+    if event.is_action_pressed("ui_cancel"):
+        set_paused(not get_tree().paused)
+        get_viewport().set_input_as_handled()
+
+func set_paused(value: bool) -> void:
+    get_tree().paused = value
+    visible = value
+    if value:
+        resume_button.grab_focus()
 ```
 
 ## Common UI Scripting Patterns

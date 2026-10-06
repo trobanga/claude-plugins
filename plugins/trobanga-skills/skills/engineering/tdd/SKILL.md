@@ -59,6 +59,8 @@ Ask: "What should the public interface look like? Which behaviors are most impor
 
 **You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
 
+Done when the user has approved the interface and the list of behaviors.
+
 #### Delegated mode
 
 When a caller launched you as a subagent with a brief (for example `implement` through a `tdd-implementer-*` agent), the planning above is already done and approved. You cannot reach the user.
@@ -77,7 +79,7 @@ RED:   Write test for first behavior → test fails
 GREEN: Write minimal code to pass → test passes
 ```
 
-This is your tracer bullet - proves the path works end-to-end.
+This is your tracer bullet - proves the path works end-to-end. Done when that test has gone red, then green.
 
 ### 3. Incremental Loop
 
@@ -95,6 +97,8 @@ Rules:
 - Don't anticipate future tests
 - Keep tests focused on observable behavior
 
+Done when every behavior in the plan has a test that went red, then green, and the full suite passes.
+
 ### 4. Refactor
 
 After all tests pass, look for [refactor candidates](refactoring.md):
@@ -106,6 +110,8 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 - [ ] Run tests after each refactor step
 
 **Never refactor while RED.** Get to GREEN first.
+
+Done when each candidate is applied or dismissed, and the full suite passes.
 
 ## Checklist Per Cycle
 
