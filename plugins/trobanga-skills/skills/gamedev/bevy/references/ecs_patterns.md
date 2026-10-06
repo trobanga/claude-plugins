@@ -1,297 +1,106 @@
-# Bevy ECS Patterns Reference
+# Bevy ECS Patterns
 
-## Component Design Patterns
+## Contents
 
-### Component Types
+- [Components](#components)
+- [Queries](#queries)
+- [Observers and messages](#observers-and-messages)
+- [Patterns](#patterns)
+- [Pitfalls](#pitfalls)
 
-**1. Data Components**
-Store game state, always derive `Component`:
-```rust
-#[derive(Component, Clone, Debug)]
-pub struct BigFive {
-    pub openness: f32,
-    pub conscientiousness: f32,
-    pub extraversion: f32,
-    pub agreeableness: f32,
-    pub neuroticism: f32,
-}
-```
+## Components
 
-**2. Marker Components**
-Used for queries and categorization:
+Keep each component to one concern; an entity that needs `Health` but not `Armor` should not carry an unused `armor` field. Put helper methods in `impl` blocks, refer to other entities by `Entity`, and use unit structs as markers for queries.
+
 ```rust
 #[derive(Component)]
+pub struct Health { pub current: f32, pub max: f32 }
+
+impl Health {
+    pub fn fraction(&self) -> f32 { self.current / self.max }
+}
+
+#[derive(Component)]
+#[require(Health { current: 100.0, max: 100.0 }, Transform)]
 pub struct Player;
-
-#[derive(Component)]
-pub struct NPC;
-
-#[derive(Component)]
-pub struct Burning;  // Marker: entity is on fire
 ```
 
-**3. Tag Components**
-Temporary state or UI markers:
-```rust
-#[derive(Component)]
-pub struct HoveredEntity;
+`#[require(...)]` inserts the listed components (with `Default` or the given value) whenever `Player` is inserted, so spawn sites need only `commands.spawn(Player)`.
 
-#[derive(Component)]
-pub struct InspectedEntity;
-```
+## Queries
 
-### Component Best Practices
-
-**✅ DO:**
-- Keep components focused on single responsibility
-- Use `Option<T>` for components that may not always be present
-- Derive `Clone` for components that need to be copied
-- Add helper methods via `impl` blocks
-- Use archetypal patterns for common configurations
-
-```rust
-impl BigFive {
-    pub fn temperature(&self) -> f32 {
-        self.extraversion * 500.0 + 20.0
-    }
-
-    pub fn fire() -> Self {
-        Self {
-            openness: 0.8,
-            conscientiousness: -0.7,
-            extraversion: 0.9,
-            agreeableness: -0.5,
-            neuroticism: 0.7,
-        }
-    }
-}
-```
-
-**❌ DON'T:**
-- Put logic in components
-- Store references to other entities directly (use `Entity` IDs)
-- Create deeply nested component hierarchies
-- Use components as function parameters
-
-## Query Patterns
-
-**1. Basic Query**
-```rust
-fn system(query: Query<&ComponentA>) {
-    for component in query.iter() {
-        // Process each entity
-    }
-}
-```
-
-**2. Multi-Component Query**
-```rust
-fn system(query: Query<(&ComponentA, &ComponentB, &mut ComponentC)>) {
-    for (a, b, mut c) in query.iter_mut() {
-        // Read a, b; mutate c
-    }
-}
-```
-
-**3. Optional Components**
-```rust
-fn system(query: Query<(&Name, Option<&BigFive>)>) {
-    for (name, maybe_traits) in query.iter() {
-        if let Some(traits) = maybe_traits {
-            // Has BigFive
-        } else {
-            // Doesn't have BigFive
-        }
-    }
-}
-```
-
-**4. Filtered Query**
 ```rust
 fn system(
-    query: Query<(&BigFive, &Name), (With<Player>, Without<NPC>)>
-) {
-    // Only entities that have Player and don't have NPC
-}
+    mut changed: Query<(&Health, &mut HealthBar), Changed<Health>>, // only entities whose Health changed
+    filtered: Query<&Transform, (With<Enemy>, Without<Player>)>,  // filter in the type, not the loop
+    optional: Query<(&Name, Option<&Health>)>,
+) { /* ... */ }
 ```
 
-**5. Multiple Mutable Access**
+Mutate two entities of one query at once with `get_many_mut`; it returns `Err` if the entities are equal or missing:
+
 ```rust
-fn handle_spell(
-    trigger: Trigger<CastSpellEvent>,
-    mut query: Query<&mut BigFive>,
-) {
-    let event = trigger.event();
-    if let Ok([mut source, mut target]) =
-        query.get_many_mut([event.source, event.target])
-    {
-        // Can mutate both at once
+fn swap_health(ev: On<SwapHealth>, mut q: Query<&mut Health>) {
+    if let Ok([mut a, mut b]) = q.get_many_mut([ev.a, ev.b]) {
+        std::mem::swap(&mut a.current, &mut b.current);
     }
 }
 ```
 
-**6. Safe Multi-Component Access**
-Use `EntityMut::get_components_mut()` for runtime-checked mutable access to multiple components on the same entity:
+Mutate several components of one entity checked at runtime with `EntityMut::get_components_mut::<(&mut A, &mut B)>()`, which returns `Result`.
+
+## Observers and messages
+
+An observer runs immediately when its event is triggered. Use it for reactions to discrete happenings:
+
 ```rust
-fn system(mut query: Query<EntityMut>) {
-    for mut entity in query.iter_mut() {
-        if let Ok((health, armor)) = entity.get_components_mut::<(&mut Health, &mut Armor)>() {
-            health.current -= armor.defense;
-        }
+#[derive(EntityEvent)]
+struct Damage { entity: Entity, amount: f32 }
+
+app.add_observer(apply_damage);
+
+fn apply_damage(damage: On<Damage>, mut q: Query<&mut Health>) {
+    if let Ok(mut health) = q.get_mut(damage.entity) {
+        health.current -= damage.amount;
+    }
+}
+
+fn shoot(mut commands: Commands, enemies: Query<Entity, With<Enemy>>) {
+    for entity in &enemies {
+        commands.trigger(Damage { entity, amount: 10.0 });
     }
 }
 ```
 
-## Entity Notes
+A lifecycle observer reacts to component changes: `fn on_spawn(add: On<Add, Player>) { add.entity }`.
 
-- `Entity::index_u32()` returns the entity's index (renamed from `Entity::row()` in 0.18)
-- `Entity::from_index()` creates an entity from index (renamed from `Entity::from_row()`)
+A message is buffered and read by a scheduled system, so it follows system ordering. Use it for high-volume streams read once per frame:
 
-## Common Design Patterns
-
-### Derivation Pattern
-
-**Problem:** Some properties should be calculated from others.
-
-**Solution:**
 ```rust
-// Source of truth
-#[derive(Component)]
-pub struct BigFive {
-    pub extraversion: f32,
-    // ...
-}
+#[derive(Message)]
+struct Footstep { pos: Vec3 }
 
-impl BigFive {
-    pub fn temperature(&self) -> f32 {
-        self.extraversion * 500.0 + 20.0
-    }
-}
+app.add_message::<Footstep>()
+    .add_systems(Update, (walk, play_footsteps).chain());
 
-// Cached derived value
-#[derive(Component)]
-pub struct Temperature {
-    pub degrees: f32,
-}
-
-// System to sync
-pub fn derive_temperature(
-    mut query: Query<(&BigFive, &mut Temperature), Changed<BigFive>>,
-) {
-    for (traits, mut temp) in query.iter_mut() {
-        temp.degrees = traits.temperature();
-    }
-}
+fn walk(mut steps: MessageWriter<Footstep>) { steps.write(Footstep { pos: Vec3::ZERO }); }
+fn play_footsteps(mut steps: MessageReader<Footstep>) { for step in steps.read() { /* ... */ } }
 ```
 
-### State Machine Pattern
+## Patterns
 
-**Problem:** Entities need to change behavior based on state.
+**Derived values.** Keep one source-of-truth component and recompute the cached one in a `Changed<Source>` system.
 
-**Solution:**
-```rust
-#[derive(Component)]
-pub enum NPCState {
-    Idle,
-    Patrolling,
-    Investigating,
-    Attacking,
-}
+**Thresholds.** In a `Changed<T>` system, `insert` a marker when a value crosses a threshold and `remove::<Marker>()` when it falls back; other systems then filter with `With<Marker>`.
 
-pub fn npc_behavior(
-    mut query: Query<(&mut Transform, &NPCState)>,
-) {
-    for (mut transform, state) in query.iter_mut() {
-        match state {
-            NPCState::Idle => { /* ... */ }
-            NPCState::Patrolling => { /* ... */ }
-            NPCState::Investigating => { /* ... */ }
-            NPCState::Attacking => { /* ... */ }
-        }
-    }
-}
-```
+**State machines.** An enum component per entity, matched in one system; for app-wide modes use `States` with `OnEnter` / `OnExit` schedules and `DespawnOnExit(state)` on entities that belong to a state.
 
-### Threshold/Trigger Pattern
+## Pitfalls
 
-**Problem:** Need to detect when values cross boundaries.
+**Conflicting queries.** Two queries in one system that touch the same component mutably must be provably disjoint (`Without<Player>` on one, `With<Player>` on the other) or wrapped in a `ParamSet`; otherwise the app panics at startup.
 
-**Solution:**
-```rust
-pub fn check_thresholds(
-    mut query: Query<(Entity, &BigFive, &Name), Changed<BigFive>>,
-    mut commands: Commands,
-) {
-    for (entity, traits, name) in query.iter() {
-        // Check threshold
-        if traits.extraversion > 0.6 {
-            commands.entity(entity).insert(Burning {
-                intensity: traits.extraversion,
-            });
-            println!("{} IGNITES!", name);
-        }
+**Observer loops.** An observer that triggers its own event type recurses forever. Trigger a different event, or add a termination condition.
 
-        // Remove if below threshold
-        if traits.extraversion <= 0.6 {
-            commands.entity(entity).remove::<Burning>();
-        }
-    }
-}
-```
+**Despawned entities.** `Commands` apply later, so a despawned entity may still appear in queries this frame, and an `Entity` held in a component may point at nothing next frame. Use `query.get(e)` with `if let Ok(..)`, never `unwrap()`.
 
-### Event-Driven Pattern
-
-**Problem:** Systems need to communicate without tight coupling.
-
-**Solution:** Use the observer pattern:
-```rust
-// Define event
-#[derive(Event, Clone)]
-pub struct SpellCastEvent {
-    pub caster: Entity,
-    pub target: Entity,
-    pub spell_type: SpellType,
-}
-
-// Register observer in plugin
-app.add_observer(process_spell);
-
-// Trigger from any system
-pub fn cast_spell(
-    input: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
-) {
-    if input.just_pressed(KeyCode::Space) {
-        commands.trigger(SpellCastEvent { /* ... */ });
-    }
-}
-
-// Observer handler
-pub fn process_spell(
-    trigger: Trigger<SpellCastEvent>,
-    mut query: Query<&mut BigFive>,
-) {
-    let event = trigger.event();
-    if let Ok(mut traits) = query.get_mut(event.target) {
-        // Process spell effect
-    }
-}
-```
-
-### Initialization Pattern
-
-**Pattern: Initialize derived components**
-```rust
-// Entities spawned with BigFive but missing Temperature/Mass
-pub fn initialize_derived_physics(
-    mut commands: Commands,
-    query: Query<(Entity, &BigFive), (Without<Temperature>, Without<Mass>)>,
-) {
-    for (entity, traits) in query.iter() {
-        commands.entity(entity).insert((
-            Temperature { degrees: traits.temperature() },
-            Mass { kilograms: traits.mass() },
-        ));
-    }
-}
-```
+**Dropped handles.** `materials.add(..)` returns a strong `Handle`; if you drop it without storing it in a component or resource, the asset is freed.

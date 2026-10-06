@@ -1,130 +1,74 @@
-# Bevy Project Structure Reference
+# Bevy Project Structure and Build Setup
 
-## Standard Bevy Layout
+## Layout: one module and one plugin per feature
+
+Group code by game feature, not by kind. Each feature module owns its components, messages, events and systems and exposes one plugin; `main.rs` only assembles plugins.
 
 ```
 src/
-├── main.rs                 # App setup, plugin registration, system scheduling
-├── components/
-│   ├── mod.rs
-│   ├── properties.rs      # Core data components
-│   ├── effects.rs         # State marker components
-│   ├── ui.rs             # UI marker components
-│   └── [domain].rs       # Domain-specific components
-├── systems/
-│   ├── mod.rs
-│   ├── [feature].rs      # Feature systems (one file per major feature)
-│   └── ui/
-│       ├── mod.rs
-│       └── [ui_feature].rs
-├── events.rs              # Game events and messages
-└── resources.rs           # Global resources
+├── main.rs            # App::new(), DefaultPlugins, feature plugins
+├── combat/
+│   ├── mod.rs         # CombatPlugin: registers everything below
+│   ├── components.rs  # Health, Armor
+│   ├── events.rs      # Damage (EntityEvent), Death
+│   └── systems.rs     # apply_damage, check_death
+├── movement/
+│   └── mod.rs         # small features stay in one file
+└── ui/
+    ├── mod.rs         # UiPlugin
+    └── hud.rs
 ```
 
-## Key Principles
-
-**1. Separation of Concerns**
-- **Components** = Pure data, no logic
-- **Systems** = Pure logic, operate on components
-- **Events** = Communication between systems
-- **Resources** = Global state (use sparingly)
-
-**2. Module Organization**
 ```rust
-// Good: Grouped by feature
-src/systems/personality_physics.rs
-src/systems/thresholds.rs
-src/systems/spells.rs
+// src/combat/mod.rs
+pub struct CombatPlugin;
 
-// Bad: Grouped by system type
-src/systems/update_systems.rs
-src/systems/query_systems.rs
-```
-
-**3. Component Files**
-Keep related components together:
-```rust
-// src/components/effects.rs
-#[derive(Component)]
-pub struct Burning { pub intensity: f32 }
-
-#[derive(Component)]
-pub struct Frozen;
-
-#[derive(Component)]
-pub struct Dissolving { pub progress: f32 }
-```
-
-## System Ordering
-
-Systems run in the order they're added. Use comments to make dependencies clear:
-
-```rust
-.add_systems(
-    Update,
-    (
-        // Input processing
-        spell_input,
-
-        // State changes (modifies data)
-        process_spell_casts,
-
-        // Derive properties from state
-        derive_physics_from_personality,
-
-        // Check for threshold crossings
-        threshold_reactions,
-
-        // Visual updates (reads state, updates rendering)
-        visual_threshold_effects,
-        update_temperature_visuals,
-
-        // UI updates (must run last)
-        update_inspect_display,
-        update_hover_tooltip,
-    ),
-)
-```
-
-## Change Detection
-
-Use `Changed<T>` to avoid unnecessary processing:
-
-```rust
-// ✅ GOOD: Only process when BigFive changes
-pub fn threshold_reactions(
-    mut query: Query<(Entity, &BigFive, &Name), Changed<BigFive>>,
-    mut commands: Commands,
-) {
-    for (entity, traits, name) in query.iter() {
-        if traits.extraversion > 0.6 {
-            commands.entity(entity).insert(Burning {
-                intensity: traits.extraversion,
-            });
-            println!("{} IGNITES!", name);
-        }
+impl Plugin for CombatPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_observer(systems::apply_damage)
+            .add_systems(Update, (systems::regenerate, systems::check_death).chain());
     }
 }
 
-// ❌ BAD: Runs every frame for all entities
-pub fn threshold_reactions(
-    mut query: Query<(Entity, &BigFive, &Name)>,
-    mut commands: Commands,
-) {
-    // Wasteful!
+// src/main.rs
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, combat::CombatPlugin, movement::MovementPlugin, ui::UiPlugin))
+        .run();
 }
 ```
 
-## Cargo Feature Collections
+When one plugin's systems must run before another's, export a `SystemSet` from the first and order the sets once in `main.rs` with `configure_sets`.
 
-Bevy 0.18 introduces collection features for simplified dependency management:
+## Cargo features
+
+Bevy's default features are the collections `2d`, `3d`, `ui` and `audio`. `2d` and `3d` do not pull in `ui` or `audio`, so a project with `default-features = false` lists each collection it uses:
 
 ```toml
 [dependencies]
-# Instead of listing individual features, use collections:
-bevy = { version = "0.18", features = ["3d"] }  # All 3D features
-bevy = { version = "0.18", features = ["2d"] }  # All 2D features
-bevy = { version = "0.18", features = ["ui"] }  # All UI features
+bevy = { version = "0.19", default-features = false, features = ["3d", "ui"] }
 ```
 
-This reduces boilerplate in `Cargo.toml` for common project types.
+Optional pieces are separate features, among them `gltf_animation`, `mesh_picking`, `sprite_picking`, `ui_picking`, `free_camera`, `pan_camera`, `bevy_feathers` and `dynamic_linking`. Check the list in the `[features]` table of the `Cargo.toml` next to the examples directory.
+
+## Build profile
+
+From the [official setup guide](https://bevy.org/learn/quick-start/getting-started/setup/):
+
+```toml
+# Cargo.toml
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+```
+
+```toml
+# .cargo/config.toml — Linux, needs clang and lld installed
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+```
+
+On macOS the default linker is already faster than lld; leave it.
