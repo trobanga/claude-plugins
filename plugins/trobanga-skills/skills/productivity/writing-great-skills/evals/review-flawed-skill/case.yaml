@@ -1,0 +1,63 @@
+schema_version: "1.1"
+name: review-flawed-skill
+description: >
+  Review a skill with planted defects. Each llm grader checks that the review
+  finds one defect and proposes the fix this skill teaches.
+tags: [review]
+context:
+  add_dirs: [summarize-logs]
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: |
+    Review the agent skill `summarize-logs`; its folder is one of your
+    additional working directories. Use the writing-great-skills skill.
+    List every defect you find with file:line and a concrete fix.
+graders:
+  - name: description
+    type: llm
+    criteria: >
+      The review flags the frontmatter description of SKILL.md because it is
+      written in the first person ("I can help") and does not say what the
+      skill does, and proposes a third-person description that says what the
+      skill does and when to use it.
+  - name: trigger-synonyms
+    type: llm
+    criteria: >
+      The review flags that the triggers in the description ("logs, log files,
+      logging output, their logs") are synonyms for one case and should be
+      collapsed into one trigger.
+  - name: completion-criterion
+    type: llm
+    criteria: >
+      The review flags step 1 ("Keep reading until you understand them") as a
+      vague or uncheckable completion criterion and proposes a checkable one,
+      for example "every named file read in full".
+  - name: negation
+    type: llm
+    criteria: >
+      The review flags step 2 ("Never write long summaries. Never use nested
+      bullet lists.") for steering by prohibition, and proposes a positive
+      target instead, for example a length limit or the structure to use.
+  - name: script
+    type: llm
+    criteria: >
+      The review flags step 3, where the agent writes a new regular expression
+      for the timestamps on every run, and proposes moving the parsing into a
+      bundled script, so the result is the same on every run.
+  - name: nested-reference
+    type: llm
+    criteria: >
+      The review flags that http.md is reached only through reference.md, two
+      levels away from SKILL.md, and proposes linking it directly from
+      SKILL.md.
+  - name: duplication
+    type: llm
+    criteria: >
+      The review flags that "Never write long summaries" (step 2) and "Keep
+      every summary short" (last line) state one rule twice, and proposes
+      keeping it in one place.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

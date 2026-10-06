@@ -1,0 +1,58 @@
+schema_version: "1.1"
+name: write-new-skill
+description: >
+  Write a new skill from a one-line request. Each grader checks one property
+  of the written skill that this skill teaches.
+tags: [write]
+execution:
+  max_turns: 30
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+  prompt: |
+    Write a new agent skill named `release-notes`. It turns the pull requests
+    merged since the last git tag into release notes, grouped by their GitHub
+    label. The agent fires it when the user asks for release notes or a
+    changelog. Use the writing-great-skills skill. Write the skill to
+    `release-notes/SKILL.md` in the current directory, with any bundled files
+    next to it.
+graders:
+  - name: written
+    type: file_exists
+    path: release-notes/SKILL.md
+  - name: not-first-or-second-person
+    type: regex
+    pattern: '^description:\s*["'']?(I |I''m |You |We )'
+    flags: m
+    match: not_contains
+    target: {source: file, path: release-notes/SKILL.md}
+  - name: what-and-when
+    type: llm
+    focus: {source: file, path: release-notes/SKILL.md}
+    criteria: >
+      The frontmatter description first says what the skill does and then
+      when to use it, and lists each distinct trigger once (for example
+      release notes and changelog), without several synonyms for one trigger.
+  - name: low-freedom
+    type: llm
+    focus: {source: file, path: release-notes/SKILL.md}
+    criteria: >
+      Collecting the merged pull requests since the last tag and grouping
+      them by label is done by a bundled script, or by exact commands the
+      skill gives, not by prose that leaves the agent to work out the
+      commands on each run.
+  - name: completion-criteria
+    type: llm
+    focus: {source: file, path: release-notes/SKILL.md}
+    criteria: >
+      Every step of the skill ends on a completion criterion the agent can
+      check, for example "every merged pull request appears in exactly one
+      group", rather than ending without one or on a vague one.
+  - name: positive
+    type: llm
+    focus: {source: file, path: release-notes/SKILL.md}
+    criteria: >
+      The skill states the behaviour it wants. Any prohibition ("never",
+      "do not") is paired with the behaviour to use instead.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

@@ -1,0 +1,42 @@
+schema_version: "1.1"
+name: diagnose-skipped-step
+description: >
+  Diagnose a skill whose agent cuts a step short. The graders check the
+  diagnosis and the order of the remedies this skill teaches.
+tags: [diagnose]
+context:
+  add_dirs: [deploy-check]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill]
+  prompt: |
+    My skill `deploy-check` misbehaves; its folder is one of your additional
+    working directories. The agent often says the deployment is healthy after
+    a glance, then goes straight to posting in #releases and closing the
+    ticket. Why does this happen, and what should I change first? Use the
+    writing-great-skills skill.
+graders:
+  - name: cause
+    type: llm
+    criteria: >
+      The answer names the vague completion criterion of step 2 ("looks
+      healthy", which the agent cannot check) as the cause, and explains that
+      the visible later steps (posting, closing the ticket) pull the agent to
+      finish step 2 early.
+  - name: sharpen-first
+    type: llm
+    criteria: >
+      The first change the answer proposes is a checkable criterion for step
+      2, for example named health checks, an endpoint that must return 200,
+      or an error rate below a threshold, ideally checked by a command or a
+      script.
+  - name: split-last
+    type: llm
+    criteria: >
+      The answer either does not propose splitting the skill or hiding the
+      later steps, or proposes it only as a fallback after a sharper
+      criterion has failed.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only
