@@ -25,30 +25,24 @@ The plugin installs no hooks.
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `GLOSSARY.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
 | `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, PR. GitHub, Linear or beads. |
-| `gh-issue` | Entry point that calls `implement` with tracker and forge preset to GitHub. |
 | `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
 | `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
 | `orchestrate` | Slices a locked spec into vertical slices and decides per slice whether to delegate. |
 | `wayfinder` | Maps work too large for one session as a set of decision tickets. |
 | `to-spec` | Turns the current conversation into a spec and files it in the issue tracker. |
 | `to-tickets` | Breaks a plan into tracer-bullet tickets. |
-| `gauntlet-loop` | Runs a goal through builder and blind-critic rounds against a concrete bar. |
 | `grill-with-docs` | Interviews you to sharpen a design, and writes ADRs and a glossary as it goes. |
 | `prototype` | Builds a throwaway prototype to answer one design question. |
 | `research` | Investigates a question against primary sources and writes the findings to a file. |
-| `claude-handoff` | Hands the conversation to a fresh background agent. |
 | `zoom-out` | Gives the broader context when the work has lost its frame. |
 
 ## Game development
 
 | Skill | What it does |
 | --- | --- |
-| `bevy` | Bevy ECS architecture, system ordering, UI, build strategy, and common pitfalls. |
-| `godot-best-practices` | Godot 4 GDScript standards: scenes, signals, resources, state machines, pooling, save systems. |
-| `godot-development` | Scene creation, node management, and project structure in Godot. |
-| `godot-gdscript-patterns` | GDScript patterns: signals, scenes, state machines, optimization. |
+| `bevy` | Bevy 0.19 ECS: current API, system ordering, observers and messages, UI, builds. |
+| `godot` | Godot 4 GDScript: scene architecture, signals, resources, state machines, pooling, save systems. |
 | `godot-ui` | Control nodes, themes, responsive layout, menus, HUDs, inventories, dialogue. |
-| `unity-developer` | Unity 6 LTS, URP/HDRP, gameplay systems, and cross-platform builds. |
 
 ## Productivity and writing
 
@@ -56,7 +50,7 @@ The plugin installs no hooks.
 | --- | --- |
 | `grilling` | Stress-tests a plan or a decision with relentless questions. |
 | `writing-great-skills` | The principles that make a skill load at the right time and act predictably. |
-| `handoff` | Compacts the conversation into a handoff document. |
+| `handoff` | Writes the conversation into a handoff document; with `bg`, starts a background agent on it. |
 | `idea` | Captures an idea as a Markdown file that reads like a news article. |
 | `ste` | Switches the session to ASD-STE100 Simplified Technical English. |
 | `teach` | Teaches a concept inside this workspace, with a glossary and a learning record. |
@@ -90,7 +84,7 @@ Most skills need only `git`. These need more:
 - `patch-coverage`, `improve-coverage`, `crap-score`: `python3`, `diff-cover`,
   and the coverage tool of the language (JaCoCo, `go test -cover`,
   `cargo-tarpaulin`, ExCoveralls).
-- `implement`, `gh-issue`, `worktree-cleanup`: `git`, plus the tool of the tracker in use —
+- `implement`, `worktree-cleanup`: `git`, plus the tool of the tracker in use —
   the `gh` command line program for GitHub, the `bd` command line program for beads, or a
   connected Linear MCP server for Linear.
 
@@ -100,12 +94,12 @@ Most skills need only `git`. These need more:
 >
 > — attributed to Pablo Picasso
 
-These fourteen skills are derived from
+These thirteen skills are derived from
 [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock:
 
-`claude-handoff`, `conformance-review`, `domain-modeling`, `grill-with-docs`,
-`grilling`, `handoff`, `improve-codebase-architecture`, `prototype`, `research`,
-`tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
+`conformance-review`, `domain-modeling`, `grill-with-docs`, `grilling`,
+`handoff`, `improve-codebase-architecture`, `prototype`, `research`, `tdd`,
+`teach`, `to-spec`, `to-tickets`, `wayfinder`.
 
 They stay under his MIT licence. See
 [LICENSES/mattpocock-skills-MIT.txt](../../LICENSES/mattpocock-skills-MIT.txt).
