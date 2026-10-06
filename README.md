@@ -48,13 +48,13 @@ both `plugins/<name>/.claude-plugin/plugin.json` and the matching entry in
 >
 > — attributed to Pablo Picasso
 
-Thirteen skills in `trobanga-skills` are derived from
+Fourteen skills in `trobanga-skills` are derived from
 [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock. Some
 are close to the original, some are rewritten, all started there:
 
 `conformance-review`, `domain-modeling`, `grill-with-docs`, `grilling`,
-`handoff`, `improve-codebase-architecture`, `prototype`, `research`, `tdd`,
-`teach`, `to-spec`, `to-tickets`, `wayfinder`.
+`handoff`, `improve-codebase-architecture`, `prototype`, `reflect`, `research`,
+`tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
 
 That work is MIT licensed. The notice is at
 [plugins/LICENSES/mattpocock-skills-MIT.txt](plugins/LICENSES/mattpocock-skills-MIT.txt),

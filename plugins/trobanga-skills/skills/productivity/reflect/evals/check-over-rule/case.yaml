@@ -1,0 +1,88 @@
+schema_version: "1.1"
+name: check-over-rule
+description: >
+  The user corrects the agent twice for importing lodash, and the agent needs
+  five searches to find where the API base URL lives. The repo has an ESLint
+  config and an `npm run lint` script, but no pre-commit hook and no CI job
+  runs it. The skill proposes an ESLint `no-restricted-imports` rule instead
+  of a prose rule, a one-line pointer for the search, flags the unwired lint,
+  and writes nothing before the user approves. Hypothesis: a default agent
+  writes "Do not use lodash" into CLAUDE.md at once and never looks at the
+  lint setup. reflect is user-invoked: run it on a copy made by
+  evaluate-skill's `skill_eval.py prepare`. Run with --allow-tools Write,Edit
+  so that a premature write is visible to the graders.
+tags: [levers, approval]
+context:
+  add_dirs: [notes-app]
+execution:
+  max_turns: 20
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the reflect skill. The project is the `notes-app` folder, one of your
+    additional working directories. The session to review:
+
+    USER: Add a 300 ms debounce to the search box in src/search.ts.
+
+    ASSISTANT: Added `import debounce from 'lodash/debounce'` and wrapped
+    the input handler.
+
+    USER: We don't use lodash, it is not even a dependency. Use our
+    src/util/debounce.ts.
+
+    ASSISTANT: Switched to `import { debounce } from './util/debounce'`.
+
+    USER: Now group the results by notebook before rendering.
+
+    ASSISTANT: Added `import groupBy from 'lodash/groupBy'`.
+
+    USER: Again lodash. Use Object.groupBy.
+
+    ASSISTANT: Replaced it with `Object.groupBy(results, r => r.notebook)`.
+
+    USER: Search should hit the staging API when NODE_ENV is staging.
+
+    ASSISTANT: [Grep "API_URL" — no match] [Grep "baseUrl" — no match]
+    [Glob "**/*api*" — src/api.ts] [Read src/api.ts — imports `apiBase`
+    from './config/env'] [Read src/config/env.ts — found `apiBase`, chosen
+    by NODE_ENV]. Added the staging URL to src/config/env.ts.
+graders:
+  - name: lint-rule-for-lodash
+    type: llm
+    criteria: >
+      PASS if the answer proposes an automated check against lodash imports,
+      such as an ESLint `no-restricted-imports` (or `no-restricted-modules`)
+      entry in the project's existing `.eslintrc.json`, as the remedy for the
+      repeated lodash mistake. A prose rule in CLAUDE.md alone FAILS; a prose
+      rule offered only as a fallback next to the check passes.
+  - name: unwired-lint
+    type: llm
+    criteria: >
+      PASS if the answer points out that `npm run lint` exists but no
+      pre-commit hook or CI job runs it, and proposes wiring it in.
+  - name: pointer-for-search
+    type: llm
+    criteria: >
+      PASS if the answer proposes a short pointer in a steering file (such as
+      CLAUDE.md) that names src/config/env.ts as the place for the API base
+      URL or environment configuration.
+  - name: asks-before-writing
+    type: llm
+    criteria: >
+      PASS if the answer ends by asking the user which proposed changes to
+      apply. FAIL if it reports changes as already made.
+  - name: no-write
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+  - name: no-edit
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

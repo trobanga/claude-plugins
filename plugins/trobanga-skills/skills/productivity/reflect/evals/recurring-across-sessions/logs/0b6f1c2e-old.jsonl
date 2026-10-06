@@ -1,0 +1,5 @@
+{"type": "user", "isSidechain": false, "timestamp": "2026-09-01T09:00:00Z", "message": {"role": "user", "content": "Push the rate-limit fix."}, "sessionId": "0b6f1c2e-old"}
+{"type": "assistant", "isSidechain": false, "timestamp": "2026-09-01T09:01:00Z", "message": {"role": "assistant", "content": [{"type": "tool_use", "id": "toolu_0001", "name": "Bash", "input": {"command": "git push origin main"}}]}, "sessionId": "0b6f1c2e-old"}
+{"type": "user", "isSidechain": false, "timestamp": "2026-09-01T09:01:00Z", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_0001", "content": "To github.com:acme/rates.git\n  4f1a2b3..9c8d7e6  main -> main", "is_error": false}]}, "sessionId": "0b6f1c2e-old"}
+{"type": "user", "isSidechain": false, "timestamp": "2026-09-01T09:02:00Z", "message": {"role": "user", "content": "Never push directly to main. Always open a PR."}, "sessionId": "0b6f1c2e-old"}
+{"type": "assistant", "isSidechain": false, "timestamp": "2026-09-01T09:02:30Z", "message": {"role": "assistant", "content": [{"type": "text", "text": "Understood, I'll open PRs from now on."}]}, "sessionId": "0b6f1c2e-old"}

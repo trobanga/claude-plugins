@@ -1,0 +1,70 @@
+schema_version: "1.1"
+name: audit-steering
+description: >
+  The `audit` branch on a project whose CLAUDE.md has five planted defects:
+  a stale path, a no-op line, a rule stated twice, a mechanical rule that the
+  existing ESLint config could enforce, and database knowledge in the root
+  file although src/db has its own CLAUDE.md. One line is correct and must
+  stay. Hypothesis: a default agent rewrites the file for style, misses the
+  stale path, keeps the no-op, and adds lines instead of moving rules into
+  checks. reflect is user-invoked: run it on a copy made by evaluate-skill's
+  `skill_eval.py prepare`. Run with --allow-tools Write,Edit so that a
+  premature write is visible.
+tags: [audit, pruning]
+context:
+  add_dirs: [webshop]
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]
+  prompt: |
+    Use the reflect skill with the argument: audit. The project is the
+    `webshop` folder, one of your additional working directories.
+graders:
+  - name: stale-path
+    type: llm
+    criteria: >
+      PASS if the answer flags that CLAUDE.md names src/server/routes.ts,
+      which does not exist, and proposes src/http/routes.ts instead.
+  - name: no-op
+    type: llm
+    criteria: >
+      PASS if the answer proposes to delete "Write clean, maintainable,
+      well-structured code." as a line that does not change the agent's
+      behaviour.
+  - name: duplicate
+    type: llm
+    criteria: >
+      PASS if the answer flags that the rule about running `npm test` before
+      a commit is stated twice and proposes keeping one.
+  - name: var-to-lint
+    type: llm
+    criteria: >
+      PASS if the answer proposes enforcing the "never use `var`" rule with
+      ESLint (`no-var`) in the existing `.eslintrc.json` and deleting the
+      prose line, or replacing it by the check.
+  - name: misplaced
+    type: llm
+    criteria: >
+      PASS if the answer proposes moving the migration instructions from the
+      root CLAUDE.md into src/db/CLAUDE.md.
+  - name: keeps-correct-line
+    type: llm
+    criteria: >
+      PASS if the answer does not propose deleting or changing the line that
+      points to docs/payments.md, which exists and is correct.
+  - name: no-write
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+    arm: both
+  - name: no-edit
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    arm: with-only

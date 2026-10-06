@@ -1,0 +1,5 @@
+interface:
+  display_name: "Reflect"
+  short_description: "Propose checks, pointers and memory from a session"
+policy:
+  allow_implicit_invocation: false
