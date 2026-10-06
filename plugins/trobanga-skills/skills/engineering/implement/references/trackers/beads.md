@@ -52,13 +52,8 @@ If the bead is already assigned to somebody else, do not reassign. Surface it an
 
 ## T4 — Branch id
 
-The bead id, unchanged: `bd-42`.
-
-**The branch format must be `{id}--{slug}` for beads.** The id contains a hyphen, so
-`{id}-{slug}` cannot be split back apart.
-
-Some beads ids contain `--` themselves (the CLI's own example is `gt--xyz`). This stays
-unambiguous because the slug never contains `--`: split the branch name on its **last** `--`.
+The bead id, unchanged: `bd-42`. The id contains a hyphen, so it needs the default branch
+format `{id}--{slug}`; run `scripts/branch_name.py` to build and parse the name.
 
 ## T5 — Close reference
 
@@ -72,3 +67,24 @@ Put `Closes $ID` in the PR body anyway, as a human-readable trail and as the str
 searches for on the next run. It does not close anything by itself.
 
 Tell the user that closing is a separate step here, not automatic on merge.
+
+## T6 — Create an issue
+
+Inputs: a title, a body, labels, and optionally a parent bead.
+
+```bash
+bd create --title "$TITLE" --body-file "$BODY_FILE" --labels "$LABELS" [--parent "$PARENT"] --silent
+```
+
+`$LABELS` is comma-separated. `--parent` makes the new bead a child of `$PARENT`. `--silent`
+prints only the new id.
+
+## T7 — Link blocking
+
+`$BLOCKER` blocks `$ID`, both already filed:
+
+```bash
+bd dep add "$ID" --blocked-by "$BLOCKER"
+```
+
+The edge keeps `$ID` out of `bd ready` until `$BLOCKER` closes.

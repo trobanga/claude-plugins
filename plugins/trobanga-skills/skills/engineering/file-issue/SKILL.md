@@ -6,14 +6,15 @@ description: Write one issue as a newspaper article and file it on the project's
 # File an Issue
 
 Write the issue by the rules in
-`${CLAUDE_PLUGIN_ROOT}/skills/engineering/draft-issue/SKILL.md`, sections 1 and 2. Read that
-file first. Skip its section 3.
+`${CLAUDE_SKILL_DIR}/../draft-issue/SKILL.md`, its Gather and Write
+sections. Read that file first. Skip its Show section.
 
 Then file it. Do not show a draft and do not ask for approval.
 
-The tracker is recorded in `.agents/issue-tracker.md`, `.agents/issue-tracker.local.md`, or
-as prose in `CLAUDE.md`. If none of them says, ask which tracker to use, and offer
-`Skill(trobanga-skills:setup-project)` to record the answer. That is the only question this
-skill asks.
+Resolve the tracker by reading
+`${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`. Its last resort, asking the
+user, is the only question this skill asks. File the issue with operation T6 of
+`${CLAUDE_SKILL_DIR}/../implement/references/trackers/{TRACKER}.md`, with the labels the user
+named, or none.
 
 Report the issue id or URL in one line.

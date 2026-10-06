@@ -4,13 +4,13 @@ description: Implement a locked spec by slicing it into vertical slices and deci
 disable-model-invocation: true
 ---
 
-You are the orchestrator for implementing a locked spec. The spec lives in the issue given as the argument (`bd show <id>`).
+You are the orchestrator for implementing a locked spec. The spec lives in the issue given as the argument. Resolve the tracker by reading `${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`, then fetch the issue with its adapter's T1.
 
 ## Setup
 
 1. Read the full spec. It is LOCKED — implement it as written. For the reasoning behind a decision, follow the spec's references (decision map, research docs); the spec itself does not re-argue anything.
 2. Read the ADRs the spec touches and the project's domain glossary. Use its terms exactly.
-3. If the issue is an epic, its children are the candidate slices. Read each child and decide whether it needs further slicing — slice further only when a child is too large to build and verify in one pass. If the issue is not an epic, cut the spec into vertical slices (for a backend: migration + endpoint + tests + docs per slice). File each new slice in the issue tracker and add dependencies onto the spec issue and between slices. Show the user the slice list before building.
+3. If the issue is an epic, its children are the candidate slices. Read each child and decide whether it needs further slicing — slice further only when a child is too large to build and verify in one pass. If the issue is not an epic, cut the spec into vertical slices (for a backend: migration + endpoint + tests + docs per slice). File each new slice with operation T6 of `${CLAUDE_SKILL_DIR}/../implement/references/trackers/{TRACKER}.md`, the spec issue as its parent, and wire each dependency between slices with T7. Show the user the slice list before building.
 
 Completion criterion for setup: every requirement in the spec is covered by exactly one filed slice. For a pre-sliced epic this is an audit: check the children against the spec for gaps and stale slices, and file or retire slices until the criterion holds.
 

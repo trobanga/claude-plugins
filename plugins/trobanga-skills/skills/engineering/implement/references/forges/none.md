@@ -34,5 +34,5 @@ There is none. Instead:
 
 ## F4 — Review
 
-There is no PR to review. The in-workflow review (Phase 4, step 17) is the only review pass.
+There is no PR to review. The Review step of Phase 4 is the only review pass.
 Say so explicitly, so the user knows no second pair of eyes is coming.

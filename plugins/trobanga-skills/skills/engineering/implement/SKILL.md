@@ -5,7 +5,8 @@ description: Work on a tracked issue in a fresh git worktree based on the defaul
 
 # Implement a Tracked Issue in a New Worktree
 
-The issue id comes from the skill arguments. If the user gives no id, ask for one.
+The issue id comes from the skill arguments. If the user gives no id, ask for one — unless
+the tracker is `none`, where the arguments or the conversation describe the work.
 
 This skill is tracker-agnostic. Everything tracker-specific lives in an **adapter** file that
 you read in Phase 0. The phases below never name a tracker.
@@ -14,48 +15,16 @@ you read in Phase 0. The phases below never name a tracker.
 
 ## Phase 0 — Resolve tracker, forge and branch format
 
-Two independent axes:
-
-- **TRACKER** — where the issue lives: `github`, `linear`, `beads`, `none`.
-- **FORGE** — where the code and the pull request go: `github`, `git`, `none`.
-
-They are frequently different. A repo hosted on GitHub may track its work in Linear.
-
-Resolve each axis by the first rule that hits:
-
-1. **Project config**, in this order. Stop at the first file that answers the axis:
-   1. `.agents/issue-tracker.local.md` — an untracked, personal override. Present in a repo
-      you do not control, or where the team did not want a shared file.
-   2. `.agents/issue-tracker.md` — the shared answer. Holds both axes, the branch format,
-      and any project-specific deviation from the adapters (a `--repo owner/name`, a team key,
-      an id prefix, an extra required field).
-   3. `CLAUDE.md`, which is already in your context. Read it but never write it: a project may
-      state the tracker as prose, for example "Issue tracking: Linear, team general iam (issue
-      keys `GIAM-123`)". That is project documentation written for humans, and it counts.
-2. **The shape of the id.** A URL identifies both host and tracker. `ABC-123` is Linear or
-   Jira. A bare number or `#123` narrows to a forge-native tracker. A beads prefix
-   (`bd-42`, or the prefix in `.beads/`) is beads.
-3. **Repo evidence.** A `.beads/` directory means beads. The host of
-   `git remote get-url origin` gives the FORGE with high confidence, and the TRACKER with low
-   confidence.
-4. **Tool availability.** `gh auth status`, `bd version`, a configured `linear` MCP server.
-   This describes the machine, not the project. Weakest signal.
-
-If rules 3 or 4 decided it, state the guess in one line and continue. If no rule decided the
-TRACKER, ask the user, and offer to persist the answer with
-`Skill(trobanga-skills:setup-project)`.
-
-**Branch format.** Default `{id}--{slug}`. The double separator is what lets
-`worktree-cleanup` split a non-numeric id such as `giam-123` from its slug. A project may
-override it in the config — for example `{id}-{slug}` for a repo whose existing branches use
-that shape. The config always wins over the default.
+Resolve TRACKER, FORGE and the branch format by
+[references/resolve-config.md](references/resolve-config.md). Done when all three are known —
+from the config, from a guess you stated, or from the user's answer.
 
 **Read the two adapter files** for the resolved axes before Phase 1:
 
 - `references/trackers/{TRACKER}.md`
 - `references/forges/{FORGE}.md`
 
-The tracker adapter defines five operations, referenced below as **T1**–**T5**:
+The tracker adapter defines seven operations; this skill uses **T1**–**T5** (T6 and T7, create issue and link blocking, serve the skills that file issues):
 
 | | Operation |
 |---|---|
@@ -123,24 +92,14 @@ If T1 errors, handle it per **Error Handling** below.
    git fetch origin "$DEFAULT_BRANCH"
    ```
 
-5. **Derive the branch name** from the branch id (**T4**) and the issue title:
+5. **Derive the branch name** from the branch id (**T4**) and the issue title. Run
+   [scripts/branch_name.py](scripts/branch_name.py); it prints the branch name, or on stderr
+   what to fix:
    ```bash
-   SLUG="$(printf '%s' "$TITLE" \
-     | tr '[:upper:]' '[:lower:]' \
-     | sed -E 's/[^a-z0-9]+/-/g; s/-+/-/g; s/^-//; s/-$//' \
-     | cut -c1-40 | sed -E 's/-$//')"
+   BRANCH="$(python3 "${CLAUDE_SKILL_DIR}/scripts/branch_name.py" build \
+     --id "$BRANCH_ID" --title "$TITLE" --format "$BRANCH_FORMAT")"
    ```
-   The `s/-+/-/g` collapse is required: it guarantees the slug contains no `--`, so the
-   **last** `--` in the branch name is always the separator. Split on the last one, not the
-   first — some tracker ids contain `--` themselves (beads uses ids such as `gt--xyz`).
-
-   Then apply the configured branch format:
-   ```bash
-   BRANCH="${BRANCH_ID}--${SLUG}"     # default format
-   BRANCH="${BRANCH_ID}-${SLUG}"      # only when the config sets {id}-{slug}
-   ```
-   The format is a shared contract with `Skill(trobanga-skills:worktree-cleanup)`, which
-   parses it back. Do not invent a third shape.
+   `Skill(trobanga-skills:worktree-cleanup)` parses the name back with the same script.
 
 6. **Check whether this issue already has a worktree:**
    ```bash
@@ -193,7 +152,8 @@ If T1 errors, handle it per **Error Handling** below.
 
 10. **Bootstrap the environment.** A fresh worktree has no build artifacts or local env files.
     Check what the project needs (`node_modules`, `target/`, `.env`, `.envrc`, `venv`) and
-    install or copy as appropriate before assuming anything builds.
+    install or copy as appropriate before assuming anything builds. Done when the brief's
+    test command (step 14) runs on the untouched base.
 
 ---
 
@@ -387,11 +347,9 @@ If T1 errors, handle it per **Error Handling** below.
 
 - Each issue gets an isolated environment based on a freshly-fetched default branch, leaving
   the main working directory untouched.
-- Branch format and worktree location (`.claude/worktrees/`) are a shared contract with
-  `Skill(trobanga-skills:worktree-cleanup)`. Changing either here requires changing it there
-  too. The location is also a harness contract: `EnterWorktree` is pre-approved only for paths
+- The worktree location (`.claude/worktrees/`) is a shared contract with
+  `Skill(trobanga-skills:worktree-cleanup)`. Changing it here requires changing it there too.
+  The location is also a harness contract: `EnterWorktree` is pre-approved only for paths
   under `.claude/worktrees/`.
 - Both the issue and the PR end up claimed by you, so in-flight work is visible without manual
   bookkeeping.
-- `Skill(trobanga-skills:gh-issue)` is a thin entry point that calls this skill with
-  TRACKER `github` and FORGE `github`.

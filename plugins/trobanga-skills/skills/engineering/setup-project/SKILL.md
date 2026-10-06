@@ -1,6 +1,6 @@
 ---
 name: setup-project
-description: Record which issue tracker, forge and branch format a project uses, in .agents/issue-tracker.md, so implement, worktree-cleanup and conformance-review stop guessing. Use when a project has no tracker configuration, when a skill asks which tracker to use, or when the user asks to set up or configure a project for these skills.
+description: Record which issue tracker, forge and branch format a project uses, in .agents/issue-tracker.md, so the workflow skills stop guessing. Use when a project has no tracker configuration, when a skill asks which tracker to use, or when the user asks to set up or configure a project for these skills.
 ---
 
 # Set Up a Project's Tracker Configuration
@@ -13,8 +13,11 @@ One file holds all of it:
   agent tool, it reads as project documentation, and `conformance-review` already expects this
   exact path.
 - **`.agents/issue-tracker.local.md`** — the untracked alternative, for a repo you do not
-  control or a team that does not want the shared file. Same content, gitignored, and it wins
-  over the shared file when both exist.
+  control or a team that does not want the shared file. Same content, gitignored.
+
+The skills read these files by the lookup order in
+`${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`; read it when you need to know
+which source wins.
 
 **Never write `CLAUDE.md`.** The skills read it — a project frequently states its tracker
 there as prose, and that counts — but the enum-shaped configuration of a tool that only some
@@ -38,17 +41,22 @@ already states.
 The remote host settles the FORGE. It does **not** settle the TRACKER: a repo hosted on GitHub
 may track its work in Linear or beads. Always confirm the tracker with the user.
 
+Done when every signal in the table is checked and each of the three values is either
+detected or marked unresolved.
+
 ## 2. Ask what is left
 
 Use `AskUserQuestion`, one question per unresolved item, with the detected value first and
 marked as recommended.
 
 - **Issue tracker** — `github`, `linear`, `beads`, `none`
-- **Forge** — `github`, `git` (a remote with no PR host), `none`
+- **Forge** — `github`, `none` (plain git, with or without a remote)
 - **Branch format** — `{id}--{slug}` (default) or `{id}-{slug}`
 
 For Linear, also ask for the team and the issue key prefix (for example `GIAM`). For beads,
 ask for the id prefix if it is not obvious from `.beads/`.
+
+Done when the tracker is confirmed and every unresolved value has the user's answer.
 
 ## 3. Refuse the one broken combination
 
@@ -62,6 +70,8 @@ insist, and warn that cleanup will report `Issue: unknown` for those worktrees.
 `{id}-{slug}` is safe with numeric GitHub ids, and is the right choice for a repo whose
 existing branches already use it.
 
+Done when the format and the id are not the broken pair, or the user insisted and you warned.
+
 ## 4. Ask where the file goes
 
 Two choices, and the answer depends on the team, not on the repo:
@@ -72,7 +82,7 @@ Two choices, and the answer depends on the team, not on the repo:
   team that does not want the file. Add it to `.git/info/exclude` rather than `.gitignore`, so
   the shared repo stays untouched.
 
-Recommend the tracked file. Ask, do not assume.
+Recommend the tracked file. Ask, do not assume. Done when the user has picked one.
 
 ## 5. Write the file
 
@@ -91,7 +101,7 @@ hyphen.
 ```
 
 Then add the deviations, and **only** the deviations from the adapters in
-`trobanga-skills/skills/engineering/implement/references/`. Do not copy the adapter's commands
+`${CLAUDE_SKILL_DIR}/../implement/references/`. Do not copy the adapter's commands
 into the file — the copy goes stale and the adapter is the source of truth.
 
 Write a deviation when the project has one of these:
@@ -103,15 +113,20 @@ Write a deviation when the project has one of these:
 - A tracker-specific step the adapter does not know about
 
 When nothing deviates, say so in one line. The file is still worth writing: it carries the two
-axes and the branch format, and `conformance-review` resolves the path.
+axes and the branch format.
+
+Done when the file states both axes and the branch format, and lists every deviation or says
+there is none.
 
 ## 6. Leave CLAUDE.md alone
 
 If `CLAUDE.md` already states the tracker as prose, that is fine and the skills read it. Do
 not duplicate it into the new file's wording and do not edit it. If it states something that
 contradicts what the user just told you, point out the contradiction and let them fix it.
+Done when `CLAUDE.md` is unchanged and you have reported every contradiction with it.
 
 ## 7. Report
 
 State which file you wrote, the three resolved values, and which skills now stop guessing:
-`implement`, `worktree-cleanup`, `conformance-review`.
+`implement`, `worktree-cleanup`, `conformance-review`, `file-issue`, `to-spec`, `to-tickets`,
+`wayfinder`, `orchestrate`.
