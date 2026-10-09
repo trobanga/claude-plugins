@@ -19,7 +19,7 @@ Claude Code reads the plugins from the default branch. To get updates, run
 
 | Plugin | Version | What it does |
 | --- | --- | --- |
-| [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 30+ skills: TDD, coverage, CRAP score, mutation testing, architecture review, Bevy, Godot, Unity, writing. |
+| [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 30+ skills: TDD, coverage, CRAP score, mutation testing, architecture review, Phoenix, Bevy, Godot, Unity, writing. |
 
 ## Hooks and safety
 
@@ -66,6 +66,13 @@ HumanLayer: `show-me`, close to the original, and `pr`, which builds on it. That
 work is MIT licensed. The notice is at
 [plugins/LICENSES/humanlayer-skills-MIT.txt](plugins/LICENSES/humanlayer-skills-MIT.txt),
 and it governs those two skills.
+
+`phoenix` is derived from the usage rules that
+[Phoenix](https://github.com/phoenixframework/phoenix) ships in
+`usage-rules/` and writes into the `AGENTS.md` of a new project. That work is
+MIT licensed. The notice is at
+[plugins/LICENSES/phoenix-MIT.txt](plugins/LICENSES/phoenix-MIT.txt), and it
+governs that skill.
 
 Everything else here is Apache-2.0.
 
