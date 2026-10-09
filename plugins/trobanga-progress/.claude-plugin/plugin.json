@@ -1,0 +1,11 @@
+{
+  "name": "trobanga-progress",
+  "version": "0.1.0",
+  "description": "Progress bar above the prompt for the implement workflow, plus an agents panel (/agents-info): running, finished and planned subagents with model, step progress, context, cost and time.",
+  "author": {
+    "name": "Daniel Hahne",
+    "email": "daniel@trobanga.de"
+  },
+  "types": "./types/index.d.ts",
+  "license": "MIT"
+}

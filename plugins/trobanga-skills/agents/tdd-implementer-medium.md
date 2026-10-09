@@ -15,7 +15,12 @@ it. You cannot ask the user anything.
    caller owns the commit.
 3. Run the test suite once before you change anything. If tests fail that the project does not
    document as expected failures, stop and report them.
-4. If the brief is wrong or incomplete, stop and report. Examples: a behavior cannot be tested
+4. If the tool `mcp__trobanga-progress__step` exists (load it with
+   `ToolSearch(query: "select:mcp__trobanga-progress__step")`), report your progress to it:
+   `total` is the number of behaviors in the brief. Call it with `done: 0` before the first
+   test, and again each time a behavior goes green, with the behavior as `note`. If the tool
+   does not exist, skip this step.
+5. If the brief is wrong or incomplete, stop and report. Examples: a behavior cannot be tested
    through the named interface, a named file or function does not exist, two behaviors
    contradict each other. Do not redesign on your own.
 

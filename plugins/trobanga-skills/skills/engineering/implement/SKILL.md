@@ -46,6 +46,16 @@ The forge adapter defines four, **F1**–**F4**:
 > **Tools.** This skill declares no `allowed-tools`. A tracker reached over MCP (Linear) needs
 > tool names that are not known when this file is written, and a closed list would block them.
 
+> **Progress bar.** If the `trobanga-progress` mod is installed, report each phase to it. Load
+> the tool once with `ToolSearch(query: "select:mcp__trobanga-progress__progress")`. If the
+> tool does not exist, skip every progress call; the workflow does not depend on it. Call it:
+> - in step 3, with `title` (the issue id and a few words) and `phase: "setup"`;
+> - when a step below names a phase, with that `phase` (`explore`, `design`, `implement`,
+>   `simplify`, `crap`, `mutants`, `review`, `ship`), also when the step is skipped;
+> - in step 14, once you chose the agents, with `tasks`: one entry per agent you will launch,
+>   its `title` equal to the Agent `description`, its `agent` the type without the plugin prefix;
+> - at the end, with `finished: true`, also when the work stops early.
+
 ---
 
 ## Phase 1 — Read the issue
@@ -159,7 +169,7 @@ If T1 errors, handle it per **Error Handling** below.
 
 ## Phase 3 — Understand and design
 
-11. **Explore**, scaling the effort to the issue. A typo fix needs no agents; a feature does.
+11. **Explore** (phase `explore`), scaling the effort to the issue. A typo fix needs no agents; a feature does.
     For non-trivial issues, launch `feature-dev:code-explorer` agents in parallel to map:
     - Similar existing features and the patterns they follow
     - Architecture and abstractions the issue touches
@@ -167,7 +177,7 @@ If T1 errors, handle it per **Error Handling** below.
 
     Then read the key files they identify yourself — do not design off summaries alone.
 
-12. **Design.** For issues with more than one plausible approach, launch 2–3
+12. **Design** (phase `design`). For issues with more than one plausible approach, launch 2–3
     `feature-dev:code-architect` agents in parallel, compare their blueprints, and form a
     single recommendation with the trade-offs made explicit.
 
@@ -188,7 +198,7 @@ If T1 errors, handle it per **Error Handling** below.
 
 ## Phase 4 — Implement
 
-14. **Implement test-first on Sonnet.** Delegate the red-green-refactor loop to a
+14. **Implement test-first on Sonnet** (phase `implement`). Delegate the red-green-refactor loop to a
     `trobanga-skills:tdd-implementer-<effort>` agent. It runs on Sonnet and invokes
     `Skill(trobanga-skills:tdd)` in delegated mode. You keep the design, the verification and
     the commit.
@@ -215,6 +225,9 @@ If T1 errors, handle it per **Error Handling** below.
     three files, existing handler pattern". If the design itself is still in doubt, do not
     raise the effort; go back to step 13.
 
+    **Report the plan** to the progress bar (see **Progress bar** above) with `tasks`: the
+    implementer, then `crap-agent` and `mutant-agent` when their steps will run.
+
     **Launch** the agent in the foreground, because step 15 needs its result:
     ```
     Agent(subagent_type: "trobanga-skills:tdd-implementer-<effort>", prompt: <brief>)
@@ -232,7 +245,7 @@ If T1 errors, handle it per **Error Handling** below.
     - A `high` run fails: take over in this session and finish the loop with
       `Skill(trobanga-skills:tdd)` yourself. Report that you did.
 
-15. **Simplify** with `/simplify`, which reviews the changed code for reuse, simplification,
+15. **Simplify** (phase `simplify`) with `/simplify`, which reviews the changed code for reuse, simplification,
     efficiency and altitude and applies the fixes. It does not hunt for bugs — step 18 does.
 
     **This step is conditional.** `/simplify` launches four review agents, so skip it when the
@@ -243,7 +256,7 @@ If T1 errors, handle it per **Error Handling** below.
     again. If a test fails, revert the `/simplify` edit that broke it rather than patching
     around it.
 
-16. **Drive the CRAP score down** with the `trobanga-skills:crap-agent` agent. It measures
+16. **Drive the CRAP score down** (phase `crap`) with the `trobanga-skills:crap-agent` agent. It measures
     every function changed against the default branch and brings each one below the threshold
     by adding tests or extracting functions.
 
@@ -256,7 +269,7 @@ If T1 errors, handle it per **Error Handling** below.
     It runs before the review, not after, so the reviewers see the tests it wrote and the
     functions it extracted.
 
-17. **Kill surviving mutants** with the `trobanga-skills:mutant-agent` agent. It runs the
+17. **Kill surviving mutants** (phase `mutants`) with the `trobanga-skills:mutant-agent` agent. It runs the
     project's own mutation tool on the code the branch changes, and adds a test for each
     mutant that survives and that a test can catch.
 
@@ -269,7 +282,7 @@ If T1 errors, handle it per **Error Handling** below.
     It runs after the CRAP step, because the tests that step adds already kill some mutants,
     and before the review, so the reviewers see the tests it wrote.
 
-18. **Review** the final diff. Launch `feature-dev:code-reviewer` agents in parallel, each
+18. **Review** (phase `review`) the final diff. Launch `feature-dev:code-reviewer` agents in parallel, each
     with one focus:
     - Bugs and functional correctness
     - Project conventions and existing abstractions
@@ -288,7 +301,7 @@ If T1 errors, handle it per **Error Handling** below.
 > later fix — from a reviewer agent, from **F4**, or from any other part of the workflow —
 > amends that commit. Do not add a fix as an extra commit.
 
-19. **Commit, push and open the pull request** per **F2** and **F3**, passing `--signoff`
+19. **Commit, push and open the pull request** (phase `ship`) per **F2** and **F3**, passing `--signoff`
     (required for all commits in this environment). The PR body must carry the **T5** close
     reference.
 
@@ -307,6 +320,8 @@ If T1 errors, handle it per **Error Handling** below.
 
     Normally this is the one commit. If it lists more than one, the squash above was missed —
     say so.
+
+    Then report `finished: true` to the progress bar.
 
 20. **Assign the PR to yourself** per the forge adapter. If assignment fails (for example the
     PR was opened from a fork, where the author may not be assignable), report it and

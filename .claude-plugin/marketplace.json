@@ -16,6 +16,17 @@
         "email": "daniel@trobanga.de"
       },
       "license": "Apache-2.0"
+    },
+    {
+      "name": "trobanga-progress",
+      "source": "./plugins/trobanga-progress",
+      "description": "Progress bar above the prompt for the implement workflow, plus an agents panel (/agents-info): running, finished and planned subagents with model, step progress, context, cost and time.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Daniel Hahne",
+        "email": "daniel@trobanga.de"
+      },
+      "license": "MIT"
     }
   ]
 }

@@ -102,7 +102,12 @@ These thirteen skills are derived from
 `teach`, `to-spec`, `to-tickets`, `wayfinder`.
 
 They stay under his MIT licence. See
-[LICENSES/mattpocock-skills-MIT.txt](../../LICENSES/mattpocock-skills-MIT.txt).
+[LICENSES/mattpocock-skills-MIT.txt](LICENSES/mattpocock-skills-MIT.txt).
+
+`show-me` and `pr` are derived from
+[humanlayer/skills](https://github.com/humanlayer/skills) by Dex Horthy at
+HumanLayer. They stay under its MIT licence. See
+[LICENSES/humanlayer-skills-MIT.txt](LICENSES/humanlayer-skills-MIT.txt).
 
 `improve-codebase-architecture` also draws on "Design It Twice" from John
 Ousterhout, *A Philosophy of Software Design*.

@@ -57,7 +57,10 @@ def main() -> int:
         if not (ROOT / source / "README.md").is_file():
             problems.append(f"{name}: missing {source}/README.md")
 
+    # A dot directory is local tool state (git-ignored), not a plugin.
     for directory in sorted((ROOT / "plugins").iterdir()):
+        if directory.name.startswith("."):
+            continue
         if directory.is_dir() and f"./plugins/{directory.name}" not in {
             e.get("source") for e in market.get("plugins", [])
         }:
