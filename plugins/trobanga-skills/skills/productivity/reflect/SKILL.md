@@ -29,6 +29,7 @@ Every rule and pointer costs context in every future session; a deletion gives c
 | `~/.claude/CLAUDE.md` | The user's preferences and tool conventions that hold across projects |
 | `CLAUDE.md` or `.claude/CLAUDE.md` at the repo root | Project conventions, pointers and gotchas shared with the team |
 | `<dir>/CLAUDE.md` | Knowledge about one component; it loads only when the agent works in that folder |
+| `.claude/rules/<topic>.md` with `paths:` globs in its frontmatter | A rule for one file type or area; it loads only when the agent reads, writes or edits a matching file |
 | `CLAUDE.local.md` | Private notes that stay out of version control |
 | The auto-memory folder, `~/.claude/projects/<slug>/memory/` | Facts about the user and the project; follow the memory format that the system prompt gives |
 | The project's coding-standards document, if one exists | Judgement rules for review: the reviewer reads a small diff, the implementer already carries the whole task |
@@ -37,7 +38,7 @@ Every rule and pointer costs context in every future session; a deletion gives c
 ## Steps
 
 1. **Read the sessions.** If you review only the current session and it has no compaction, your context holds it. Otherwise run `python3 ${CLAUDE_SKILL_DIR}/scripts/session_digest.py` and read its output: per session, the user's messages, the failed tool calls, the tool calls per tool and the largest tool results. Pass a session id or `.jsonl` path for one session, or `--last N [<log folder>]` for the N newest. Without a folder, it reads the logs of the project in the working directory. Done when you have read every user message of every session in scope, including those before a compaction.
-2. **Read the steering files**: `~/.claude/CLAUDE.md`, every `CLAUDE.md` and `CLAUDE.local.md` from the working directory up to the repo root and in each folder the session touched, the project's `MEMORY.md`, and the repo's checks (see **Check**). If a steering file has more than 200 lines, the length Claude Code's documentation names as the point where adherence drops, add a candidate: run this skill with `audit` on it. Done when you can tell, for any candidate, whether a file already covers it.
+2. **Read the steering files**: `~/.claude/CLAUDE.md`, every `CLAUDE.md` and `CLAUDE.local.md` from the working directory up to the repo root and in each folder the session touched, every file in `~/.claude/rules/` and the repo's `.claude/rules/`, the project's `MEMORY.md`, and the repo's checks (see **Check**). If a steering file has more than 200 lines, the length Claude Code's documentation names as the point where adherence drops, add a candidate: run this skill with `audit` on it. For `MEMORY.md` this candidate ranks first, because Claude Code loads only its first 200 lines (or 25 KB) and the rest is already lost. Done when you can tell, for any candidate, whether a file already covers it.
 3. **Find the signals** in each session:
    - the user corrected code, an API, an assumption or the approach;
    - a mistake surfaced late, through a test, a failed command or a review;
@@ -64,7 +65,7 @@ Every rule and pointer costs context in every future session; a deletion gives c
 
 ## Audit branch
 
-With `audit`, there is no session: the steering files are under review. Skip step 1. In step 3, read every `CLAUDE.md`, `CLAUDE.local.md` and memory file of the project in full and check each line against the code. The signals are:
+With `audit`, there is no session: the steering files are under review. Skip step 1. In step 3, read every `CLAUDE.md`, `CLAUDE.local.md`, rules file and memory file of the project in full and check each line against the code. The signals are:
 
 - a path, command or API that does not exist or has changed;
 - a line stated twice, in one file or across files;
