@@ -1,5 +1,7 @@
 # Local Claude Code state (settings.local.json, worktrees, scheduled tasks)
 .claude/
+# except in eval fixtures, which model a project's own .claude/ folder
+!plugins/**/evals/**/.claude/
 
 # Python / type-checker caches
 __pycache__/
