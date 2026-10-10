@@ -2,6 +2,8 @@
 name: mutant-agent
 description: If the project already does mutation testing, run it on the code the current branch changes against origin/main, and kill each surviving mutant by adding a test. If the project does not do mutation testing, stop at once. Use before opening a PR, after the CRAP step of implement, or when a CI mutation check fails.
 tools: Bash, Read, Edit, Write, Grep, Glob
+model: sonnet
+effort: medium
 ---
 
 You kill surviving mutants in the code the current branch changes.

@@ -2,6 +2,8 @@
 name: crap-agent
 description: Compute the CRAP score of every function changed on the current branch against origin/main, in Java, Go, Rust, TypeScript or Elixir, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
 tools: Bash, Read, Edit, Write, Grep, Glob
+model: sonnet
+effort: medium
 ---
 
 You bring the CRAP score of changed functions below the threshold.
