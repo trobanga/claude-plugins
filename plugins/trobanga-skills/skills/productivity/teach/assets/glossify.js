@@ -27,6 +27,16 @@
     return leftOk && rightOk;
   }
 
+  // A term with this ending takes "-es" in the plural ("hashes"); any other takes "-s".
+  var SIBILANT = /(?:s|x|z|ch|sh)$/i;
+
+  // The end of the match, past a plural suffix, so "OTPs" links as one word.
+  function pluralEnd(text, term, end) {
+    if (!WORD.test(term[term.length - 1])) return end;
+    var suffix = SIBILANT.test(term) ? 'es' : 's';
+    return text.substr(end, suffix.length) === suffix ? end + suffix.length : end;
+  }
+
   function overlapsTaken(taken, start, end) {
     for (var i = start; i < end; i++) if (taken[i]) return true;
     return false;
@@ -45,14 +55,14 @@
       var from = 0;
       var idx;
       while ((idx = text.indexOf(term, from)) !== -1) {
-        var end = idx + term.length;
+        var end = pluralEnd(text, term, idx + term.length);
         from = end;
         if (!boundaryOk(text, term, idx, end)) continue;
         if (overlapsTaken(taken, idx, end)) continue;
         for (var m = idx; m < end; m++) taken[m] = true;
         matches.push({
           index: idx,
-          length: term.length,
+          length: end - idx,
           term: term,
           id: ordered[t].id,
           gloss: ordered[t].gloss,

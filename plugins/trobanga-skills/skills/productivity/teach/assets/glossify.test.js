@@ -18,6 +18,24 @@ test('does not match a term glued inside a larger word', () => {
   assert.deepStrictEqual(glossifyMatches('OTPX and xOTP and stOTPer', OTP), []);
 });
 
+test('matches the plural of a term and links the whole word', () => {
+  const matches = glossifyMatches('two OTPs merge', OTP);
+  assert.deepStrictEqual(matches, [
+    { index: 4, length: 4, term: 'OTP', id: 'otp', gloss: 'Open Telecom Platform' },
+  ]);
+});
+
+test('matches the -es plural of a term that ends in a sibilant', () => {
+  const terms = [{ term: 'hash', id: 'hash', gloss: 'g' }];
+  const matches = glossifyMatches('two hashes', terms);
+  assert.deepStrictEqual(matches.map((m) => [m.index, m.length]), [[4, 6]]);
+});
+
+test('does not read -es after a term that takes a plain -s plural', () => {
+  const terms = [{ term: 'Go', id: 'go', gloss: 'g' }];
+  assert.deepStrictEqual(glossifyMatches('it goes and Goes', terms), []);
+});
+
 test('matches a term bounded by punctuation, not just spaces', () => {
   const matches = glossifyMatches('(OTP).', OTP);
   assert.deepStrictEqual(matches.map((m) => m.index), [1]);
