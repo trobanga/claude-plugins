@@ -178,8 +178,9 @@ If T1 errors, handle it per **Error Handling** below.
     Then read the key files they identify yourself — do not design off summaries alone.
 
 12. **Design** (phase `design`). For issues with more than one plausible approach, launch 2–3
-    `feature-dev:code-architect` agents in parallel, compare their blueprints, and form a
-    single recommendation with the trade-offs made explicit.
+    `feature-dev:code-architect` agents in parallel with `model: "opus"`, compare their
+    blueprints, and form a single recommendation with the trade-offs made explicit. The
+    `model` override is needed because the agent's own frontmatter pins it to Sonnet.
 
 13. **Resolve ambiguities.** If there are clarifying questions, unresolved ambiguities, or
     multiple viable approaches:
