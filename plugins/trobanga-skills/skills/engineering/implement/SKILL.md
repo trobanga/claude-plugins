@@ -34,7 +34,8 @@ The tracker adapter defines seven operations; this skill uses **T1**–**T5** (T
 | T4 | Give the branch id: the identifier as it appears in a branch name |
 | T5 | Close reference: the text or command that closes the issue when the work merges |
 
-The forge adapter defines four, **F1**–**F4**:
+The forge adapter defines six; this skill uses **F1**–**F4**, and **F5** in delegated mode
+(F6, merge, serves `orchestrate`):
 
 | | Operation |
 |---|---|
@@ -42,6 +43,7 @@ The forge adapter defines four, **F1**–**F4**:
 | F2 | Push the branch |
 | F3 | Open the pull request, carrying T5 |
 | F4 | Review the pull request |
+| F5 | Wait for the checks |
 
 > **Tools.** This skill declares no `allowed-tools`. A tracker reached over MCP (Linear) needs
 > tool names that are not known when this file is written, and a closed list would block them.
@@ -55,6 +57,34 @@ The forge adapter defines four, **F1**–**F4**:
 > - in step 14, once you chose the agents, with `tasks`: one entry per agent you will launch,
 >   its `title` equal to the Agent `description`, its `agent` the type without the plugin prefix;
 > - at the end, with `finished: true`, also when the work stops early.
+
+### Delegated mode
+
+A caller such as `orchestrate` can run this skill in a subagent, with `--delegated` after the
+issue id. You cannot reach the user then; the caller's brief carries the context and the
+decisions the user made. Every phase runs, with these changes:
+
+- **No progress bar.** The caller owns it.
+- **A question to the user becomes a stop.** Wherever a step below asks the user (an existing
+  PR, a claim by someone else, an existing worktree or branch, a failed claim), stop and make
+  the situation your final report. Do not choose for the user.
+- **The worktree is your cwd.** The caller launches you with `isolation: "worktree"`. Check
+  that `git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`; if not, stop
+  and report. Skip steps 6–9: after step 5, run
+  `git checkout --no-track -B "$BRANCH" "origin/$DEFAULT_BRANCH"` in the cwd. Do not call
+  `EnterWorktree` or `ExitWorktree`.
+- **Design without plan mode.** In step 13, take the design from the brief. Decide what the
+  brief leaves open from the issue and the codebase, and list each such decision under
+  Assumptions in the PR body. If an open question would change the work materially, stop
+  before step 14 and report it.
+- **Nested agents run in the foreground.** Each brief you write names the worktree's absolute
+  path and tells the agent to work only there.
+- **Wait for the checks.** After step 20, run **F5**. If a check fails, fix it, amend the one
+  commit, push with `--force-with-lease`, and run F5 again. After two failed rounds, stop and
+  report.
+- **Skip step 21 and never merge.** F4 posts on the PR; the caller decides about both.
+- **Final report:** PR number and URL, the state of the checks, the verbatim commit message,
+  the assumptions, the CRAP and mutation results, the steps you skipped, and anything open.
 
 ---
 

@@ -47,3 +47,25 @@ If this fails — a PR opened from a fork may not allow it — report it and con
 
 Run it only for large or risky changes. The workflow already ran a full review before
 shipping.
+
+## F5 — Wait for the checks
+
+```bash
+gh pr checks "$PR_NUMBER" --watch
+```
+
+It exits non-zero when a check fails. A PR with no checks reports so and counts as green: say
+that no CI ran.
+
+## F6 — Merge the pull request
+
+Only a caller that the user allowed to merge runs this (`orchestrate`). Merge with the method
+the user chose, and pin the commit that was reviewed, so a later push cannot slip in:
+
+```bash
+gh pr merge "$PR_NUMBER" --"$METHOD" --match-head-commit "$REVIEWED_SHA"
+```
+
+`$METHOD` is `merge`, `squash` or `rebase`. Never pass `--admin`, and never weaken a required
+check or review to get a merge through. Do not delete the branch; `worktree-cleanup` owns
+that. If the merge is blocked (a required review, a conflict), report it and stop.

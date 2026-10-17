@@ -36,3 +36,11 @@ There is none. Instead:
 
 There is no PR to review. The Review step of Phase 4 is the only review pass.
 Say so explicitly, so the user knows no second pair of eyes is coming.
+
+## F5 — Checks
+
+There is no CI. The test suite run of Phase 4 is the only check. Say so.
+
+## F6 — Merge
+
+Do not merge. Report the branch and how to merge it, as in F3; the user merges.

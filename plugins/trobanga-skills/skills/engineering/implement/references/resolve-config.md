@@ -49,4 +49,6 @@ Each resolved value names an adapter file beside this one. Read the one your ski
 - `trackers/{TRACKER}.md` — operations **T1** (fetch the issue) to **T5** (close reference),
   which `implement` uses, and **T6** (create an issue) and **T7** (link blocking), which the
   skills that file issues use.
-- `forges/{FORGE}.md` — operations **F1** (default branch) to **F4** (review the pull request).
+- `forges/{FORGE}.md` — operations **F1** (default branch) to **F4** (review the pull request),
+  which `implement` uses, **F5** (wait for the checks), which its delegated mode uses, and
+  **F6** (merge), which `orchestrate` uses.

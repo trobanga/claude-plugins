@@ -27,7 +27,7 @@ The plugin installs no hooks.
 | `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, PR. GitHub, Linear or beads. |
 | `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
 | `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
-| `orchestrate` | Slices a locked spec into vertical slices and decides per slice whether to delegate. |
+| `orchestrate` | Slices a locked spec into vertical slices, decides per slice whether to delegate, and optionally merges the green PRs. |
 | `wayfinder` | Maps work too large for one session as a set of decision tickets. |
 | `to-spec` | Turns the current conversation into a spec and files it in the issue tracker. |
 | `to-tickets` | Breaks a plan into tracer-bullet tickets. |
