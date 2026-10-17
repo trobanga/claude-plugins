@@ -21,7 +21,7 @@ execution:
     Use the orchestrate skill on the spec docs/specs/api-keys.md. The
     tracker is none: that file is the issue, and there is nowhere to file
     slices, so just list them. For this session do only Setup and the
-    per-slice calls: show me the slice list with your build-or-delegate
+    per-slice calls: show me the slice list with your agent, model and effort
     call for each slice, then stop before building anything.
 graders:
   - name: vertical-slices
@@ -47,9 +47,9 @@ graders:
   - name: per-slice-calls
     type: llm
     criteria: >
-      PASS if every slice has a one-line call (build in the main loop, or
-      delegate) with a reason, and every delegation names the agent, the
-      model and the effort. FAIL otherwise.
+      PASS if every slice has a one-line call with a reason that names the
+      agent, the model and the effort, and no slice is built by the
+      orchestrator itself. FAIL otherwise.
   - name: nothing-built
     type: tool_used
     tool: Write

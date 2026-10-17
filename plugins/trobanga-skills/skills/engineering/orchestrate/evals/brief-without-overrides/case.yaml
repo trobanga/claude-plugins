@@ -21,7 +21,7 @@ execution:
     Use the orchestrate skill on the spec docs/specs/api-keys.md. The
     tracker is none: that file is the issue, and its four requirements are
     the slices. I approve this plan: R1 is delegated as a whole slice to a
-    subagent on Sonnet at medium effort, the rest you build yourself, and
+    subagent on Sonnet at medium effort, and
     you do not merge. For this session write the exact Agent call for R1 —
     every parameter and the full brief — and show it to me, then stop
     without launching it.

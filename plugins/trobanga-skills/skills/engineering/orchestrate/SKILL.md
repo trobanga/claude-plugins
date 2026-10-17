@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Implement a locked spec by slicing it into vertical slices and deciding, per slice, whether to build it in the main loop or delegate it to a subagent, optionally merging the green pull requests.
+description: Implement a locked spec by slicing it into vertical slices and deciding, per slice, which subagent builds it at which model and effort, optionally merging the green pull requests.
 disable-model-invocation: true
 ---
 
@@ -21,16 +21,13 @@ Completion criterion for setup: every requirement in the spec is covered by exac
 
 ## Own the call
 
-You decide, per slice, whether to delegate or build it yourself. State the call and the reason in one line — this record is the point.
+You never write or edit code, tests or docs yourself — not a slice, not a fixup, not a review finding. Every change goes to a subagent. You slice, brief, review, merge and report. For each slice, state the call and the reason in one line — this record is the point.
 
-**Build it yourself** (main loop, `Skill(trobanga-skills:tdd)`) when the slice is small, depends on work still in flight, or needs context you have already built up. Expect this to be the common case: spec work is largely sequential, and one context beats the split for sequential work.
+The call has three parts:
 
-A single slice you could build yourself is still a delegation candidate when a cheaper model can do it. Weigh the saving against the cost of the handoff: writing the brief, the subagent re-reading the code, and your review of its diff. The saving wins only when the slice is large enough that its tokens dwarf the handoff. If in doubt, build it yourself.
-
-**Delegate** when slices are genuinely independent and can run in parallel, when a slice is large and self-contained enough that a fresh context loses nothing, or when the slice needs far less model than the main loop is running on. Two shapes:
-
-- **A whole slice as its own pull request:** a `general-purpose` agent with `isolation: "worktree"` runs `Skill(trobanga-skills:implement)` with `<id> --delegated`. It claims, builds, reviews, pushes, opens the PR and waits for the checks; it does not merge.
-- **Part of a slice you own:** a named agent — `trobanga-skills:tdd-implementer-<effort>` for a test-first build, `feature-dev:code-explorer` or `feature-dev:code-reviewer` to read, `trobanga-skills:crap-agent` and `trobanga-skills:mutant-agent` for their steps. Their definitions carry the standing rules, so the brief carries only the scope.
+- **Shape.** Normally a whole slice as its own pull request: a `general-purpose` agent with `isolation: "worktree"` runs `Skill(trobanga-skills:implement)` with `<id> --delegated`. It claims, builds, reviews, pushes, opens the PR and waits for the checks; it does not merge. For a forge without pull requests, or a change too small for the `implement` cycle, use a named agent instead — `trobanga-skills:tdd-implementer-<effort>` for a test-first build — and its definition carries the standing rules, so the brief carries only the scope.
+- **Agent reuse.** Spec work is largely sequential, and a fresh context per slice pays the code-reading cost again. When a slice builds directly on the previous one and touches the same code, send it with `SendMessage` to the agent that built the previous slice, so its context carries over. Start a fresh agent when the slices are independent, can run in parallel, or need a different model.
+- **Model and effort**, by the next section.
 
 Name the agent, model, and effort in the one-line record of the call.
 
@@ -47,16 +44,16 @@ Use the cheapest model and effort that gets the slice done. That is a fit judgem
 
 Each brief is self-contained: goal, exact files, the project's hard rules, the relevant spec sections pasted in (pasting controls scope and removes any dependency on tracker access), the user decisions that bear on the slice, and acceptance criteria. Acceptance criteria are the whole verification instruction; the implementer checks its own work.
 
-A brief adds context to a skill; it never overrides one. Do not tell a subagent to skip a step of a skill, to ignore or work around the user, or to turn off the sandbox or approvals. When a skill does not fit the slice as written, build the slice in the main loop. State environment needs as facts — "Postgres runs on localhost:5432; the sandbox blocks it" — and leave each command's handling to the subagent and its permission checks.
+A brief adds context to a skill; it never overrides one. Do not tell a subagent to skip a step of a skill, to ignore or work around the user, or to turn off the sandbox or approvals. When a skill does not fit the slice as written, pick the other shape or ask the user. State environment needs as facts — "Postgres runs on localhost:5432; the sandbox blocks it" — and leave each command's handling to the subagent and its permission checks.
 
 The auto-mode classifier reviews every delegation: the brief before the start, each action of the agent, and its final report. Briefs that override a skill's user checks were denied about half the time; plain briefs rarely are.
 
 ## Delegation rules
 
 - Use `isolation: "worktree"` for every `/implement --delegated` agent, and for any other two agents that mutate files at the same time.
-- For fixups on a delivered slice, `SendMessage` the same agent (a deferred tool: load it with `ToolSearch(query: "select:SendMessage")`) — its context is the asset. If the slice is still wrong after two fixup rounds, take it back and build it in the main loop; a third round on the same agent context is throwing good tokens after bad.
-- You integrate and review every diff yourself, in the main loop.
-- **If a delegation is denied**, do not rephrase the brief and launch it again: the classifier treats that as working around it. Build the slice in the main loop, or tell the user what was denied and let them start it again.
+- For fixups on a delivered slice, `SendMessage` the same agent (a deferred tool: load it with `ToolSearch(query: "select:SendMessage")`) — its context is the asset. If the slice is still wrong after two fixup rounds, start a fresh agent one tier higher with a brief that names what went wrong; a third round on the same agent context is throwing good tokens after bad. If that agent fails too, stop the slice and report it.
+- You review every diff yourself, and send every defect back to an agent.
+- **If a delegation is denied**, do not rephrase the brief and launch it again: the classifier treats that as working around it. Stop that slice, tell the user what was denied, and let them start it again. Continue with the slices that do not depend on it.
 
 ## Merge
 
@@ -66,7 +63,7 @@ When a merge is blocked — a required review, a conflict, a red check — stop 
 
 ## Final check
 
-Before closing the run, review the combined work. You may run the review yourself or delegate it to a subagent; state which, and why, in one line. Pick the checks that match the run's risk:
+Before closing the run, review the combined work. You may run the review yourself or delegate it to a subagent; state which, and why, in one line. A check that applies its own fixes (`Skill(simplify)`, `code-review --fix`) edits code, so it runs inside a subagent, never in your loop. Pick the checks that match the run's risk:
 
 - `Skill(trobanga-skills:conformance-review)` — documented standards and spec compliance side by side; the spec axis is the default check for a locked-spec run.
 - `Skill(code-review)` — correctness bugs and cleanups; pick the effort level to match the risk of the change. The two skills do not overlap: conformance-review owns the written references, code-review owns everything without one.
@@ -74,10 +71,10 @@ Before closing the run, review the combined work. You may run the review yoursel
 - `Skill(simplify)` — optional polish pass; it applies its fixes, so run it before the final quality gates.
 - `Skill(trobanga-skills:patch-coverage)` — when you want a coverage number for the branch before closing.
 
-Fix what the review finds before closing. When merge is on, run the final check before the last merge, so a finding still lands in a PR.
+Send each finding to the agent of the slice it belongs to, and have it fixed before closing. When merge is on, run the final check before the last merge, so a finding still lands in a PR.
 
 ## Closing
 
-A slice is done when its tests pass, its docs edit has shipped, and its PR is merged — or, without merge permission, green and handed to the user. Its issue closes through the T5 reference on merge. The run is done when every filed slice is done, the epic (or spec issue) is updated, and the project's session-completion protocol has run (quality gates, commit, push) for the work built in the main loop.
+A slice is done when its tests pass, its docs edit has shipped, and its PR is merged — or, without merge permission, green and handed to the user. Its issue closes through the T5 reference on merge. The run is done when every filed slice is done and the epic (or spec issue) is updated.
 
-End with a short run summary: what shipped (outcome per slice, PR, deviations, open follow-ups) and how the run was orchestrated — per slice: main loop or delegated, and for delegations the agent, model, effort, fixup rounds, and any denial. The per-slice one-line decision records are the raw material; this is their roll-up. Show it to the user, and post it on the epic (or spec issue) only if the user said yes in setup.
+End with a short run summary: what shipped (outcome per slice, PR, deviations, open follow-ups) and how the run was orchestrated — per slice: the agent, model, effort, whether it reused an earlier agent, fixup rounds, and any denial. The per-slice one-line decision records are the raw material; this is their roll-up. Show it to the user, and post it on the epic (or spec issue) only if the user said yes in setup.
